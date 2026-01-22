@@ -285,3 +285,49 @@ export function getVideoMimeType(ext: string): string {
   };
   return mimeTypes[ext] || 'video/mp4';
 }
+
+// Parse YAML frontmatter from markdown content
+// Returns { frontmatter: parsed key-value pairs, content: remaining markdown }
+export function parseFrontmatter(content: string): {
+  frontmatter: Record<string, string> | null;
+  content: string;
+} {
+  // Match frontmatter: starts with ---, contains YAML content, ends with ---
+  const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n?/;
+  const match = content.match(frontmatterRegex);
+
+  if (!match) {
+    return { frontmatter: null, content: content.trim() };
+  }
+
+  // Parse YAML key-value pairs (simple parsing for common cases)
+  const yamlContent = match[1];
+  const frontmatter: Record<string, string> = {};
+
+  yamlContent.split('\n').forEach((line) => {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex > 0) {
+      const key = line.substring(0, colonIndex).trim();
+      let value = line.substring(colonIndex + 1).trim();
+      // Remove surrounding quotes if present
+      if ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      if (key && value) {
+        frontmatter[key] = value;
+      }
+    }
+  });
+
+  const remainingContent = content.replace(frontmatterRegex, '').trim();
+  return {
+    frontmatter: Object.keys(frontmatter).length > 0 ? frontmatter : null,
+    content: remainingContent,
+  };
+}
+
+// Strip YAML frontmatter from markdown content (legacy, kept for compatibility)
+export function stripFrontmatter(content: string): string {
+  return parseFrontmatter(content).content;
+}

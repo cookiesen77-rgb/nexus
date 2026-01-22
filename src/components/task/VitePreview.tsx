@@ -6,8 +6,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import type { PreviewStatus } from '@/shared/hooks/useVitePreview';
 import { cn } from '@/shared/lib/utils';
+import { useLanguage } from '@/shared/providers/language-provider';
 import {
   AlertCircle,
   ExternalLink,
@@ -38,6 +40,7 @@ export function VitePreview({
   onClose,
   className,
 }: VitePreviewProps) {
+  const { t } = useLanguage();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
@@ -47,10 +50,15 @@ export function VitePreview({
     setIframeKey((k) => k + 1);
   }, []);
 
-  // Handle open in new tab
-  const handleOpenExternal = useCallback(() => {
+  // Handle open in new tab (use Tauri opener plugin)
+  const handleOpenExternal = useCallback(async () => {
     if (previewUrl) {
-      window.open(previewUrl, '_blank');
+      try {
+        await openUrl(previewUrl);
+      } catch {
+        // Fallback to window.open if Tauri plugin fails
+        window.open(previewUrl, '_blank');
+      }
     }
   }, [previewUrl]);
 
@@ -91,13 +99,13 @@ export function VitePreview({
         <div className="bg-muted/20 flex flex-1 flex-col items-center justify-center p-8">
           <Loader2 className="text-primary mb-4 size-8 animate-spin" />
           <h3 className="text-foreground mb-1 text-sm font-medium">
-            Starting Preview Server
+            {t.preview.startingServer}
           </h3>
           <p className="text-muted-foreground mb-2 max-w-xs text-center text-xs">
-            Installing dependencies and starting Vite dev server...
+            {t.preview.installingDeps}
           </p>
           <p className="text-muted-foreground/70 max-w-xs text-center text-xs">
-            First run may take 1-2 minutes to install dependencies
+            {t.preview.firstRunHint}
           </p>
         </div>
       </div>
@@ -129,7 +137,7 @@ export function VitePreview({
             <AlertCircle className="size-8 text-red-500" />
           </div>
           <h3 className="text-foreground mb-2 text-sm font-medium">
-            Preview Error
+            {t.preview.previewError}
           </h3>
           <p className="text-muted-foreground mb-4 max-w-md text-center text-xs">
             {error}
@@ -140,7 +148,7 @@ export function VitePreview({
               className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
             >
               <Play className="size-4" />
-              Retry
+              {t.preview.retry}
             </button>
           )}
         </div>
@@ -173,10 +181,10 @@ export function VitePreview({
             <Play className="text-muted-foreground/50 size-8" />
           </div>
           <h3 className="text-foreground mb-1 text-sm font-medium">
-            Live Preview
+            {t.preview.livePreview}
           </h3>
           <p className="text-muted-foreground mb-4 max-w-xs text-center text-xs">
-            Start a live preview server to see changes in real-time with HMR
+            {t.preview.livePreviewHint}
           </p>
           {onStart && (
             <button
@@ -184,7 +192,7 @@ export function VitePreview({
               className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
             >
               <Play className="size-4" />
-              Start Preview
+              {t.preview.startPreview}
             </button>
           )}
         </div>
@@ -217,7 +225,7 @@ export function VitePreview({
           ref={iframeRef}
           src={previewUrl}
           className="h-full w-full border-0"
-          title="Vite Preview"
+          title={t.preview.livePreview}
         />
       </div>
     </div>
@@ -246,6 +254,8 @@ function PreviewHeader({
   onFullscreen,
   isFullscreen,
 }: PreviewHeaderProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="border-border/50 bg-muted/30 flex shrink-0 items-center justify-between border-b px-4 py-2">
       {/* Left: Status and URL */}
@@ -261,7 +271,7 @@ function PreviewHeader({
           )}
         />
         <span className="text-muted-foreground shrink-0 text-xs font-medium">
-          Live Preview
+          {t.preview.livePreview}
         </span>
         {url && (
           <>
@@ -280,7 +290,7 @@ function PreviewHeader({
           <button
             onClick={onRefresh}
             className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors"
-            title="Refresh (Cmd+R)"
+            title={t.preview.refreshHint}
           >
             <RefreshCw className="size-4" />
           </button>
@@ -291,7 +301,7 @@ function PreviewHeader({
           <button
             onClick={onOpenExternal}
             className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors"
-            title="Open in new tab"
+            title={t.preview.openInNewTab}
           >
             <ExternalLink className="size-4" />
           </button>
@@ -301,7 +311,7 @@ function PreviewHeader({
         <button
           onClick={onFullscreen}
           className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors"
-          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          title={isFullscreen ? t.preview.exitFullscreen : t.preview.fullscreen}
         >
           <Maximize2 className="size-4" />
         </button>
@@ -311,7 +321,7 @@ function PreviewHeader({
           <button
             onClick={onStop}
             className="text-muted-foreground flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950"
-            title="Stop server"
+            title={t.preview.stopServer}
           >
             <Square className="size-4" />
           </button>
@@ -322,7 +332,7 @@ function PreviewHeader({
           <button
             onClick={onClose}
             className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors"
-            title="Close"
+            title={t.preview.close}
           >
             <X className="size-4" />
           </button>

@@ -55,6 +55,8 @@ export interface AgentMessage {
 export interface ConversationMessage {
   role: 'user' | 'assistant';
   content: string;
+  /** Image file paths attached to this message (saved to workspace) */
+  imagePaths?: string[];
 }
 
 /**

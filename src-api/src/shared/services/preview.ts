@@ -2,10 +2,13 @@
  * Preview Service
  *
  * Manages Vite dev server preview instances for live preview with HMR support.
+ * Uses bundled Node.js when available, so users don't need to install Node.js.
  */
 
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import * as path from 'path';
+import { platform } from 'os';
 
 export interface PreviewConfig {
   taskId: string;
@@ -35,6 +38,139 @@ interface PreviewInstance {
   healthCheckInterval?: ReturnType<typeof setInterval>;
   idleTimeout?: ReturnType<typeof setTimeout>;
   process?: ReturnType<typeof import('child_process').spawn>;
+}
+
+/**
+ * Get the path to the bundled Node.js (within the app bundle)
+ * This allows running JS scripts without requiring user to install Node.js
+ */
+function getBundledNodePath(): string | undefined {
+  const os = platform();
+  const execDir = process.execPath ? path.dirname(process.execPath) : '';
+
+  if (!execDir) return undefined;
+
+  if (os === 'darwin') {
+    // Check multiple locations for cli-bundle (macOS app bundle structure)
+    const searchPaths = [
+      // Contents/MacOS/cli-bundle (where build.sh copies it)
+      path.join(execDir, 'cli-bundle', 'node'),
+      // Contents/Resources/cli-bundle (standard resource location)
+      path.join(execDir, '..', 'Resources', 'cli-bundle', 'node'),
+    ];
+
+    for (const nodePath of searchPaths) {
+      if (fsSync.existsSync(nodePath)) {
+        console.log(`[Preview] Found bundled node at: ${nodePath}`);
+        return nodePath;
+      }
+    }
+  } else if (os === 'linux') {
+    const nodePath = path.join(execDir, 'cli-bundle', 'node');
+    if (fsSync.existsSync(nodePath)) {
+      return nodePath;
+    }
+  } else if (os === 'win32') {
+    const nodePath = path.join(execDir, 'cli-bundle', 'node.exe');
+    if (fsSync.existsSync(nodePath)) {
+      return nodePath;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Get the path to bundled npm-cli.js
+ * npm is bundled at cli-bundle/lib/node_modules/npm/bin/npm-cli.js (Unix)
+ * or cli-bundle/node_modules/npm/bin/npm-cli.js (Windows)
+ */
+function getBundledNpmCliPath(): string | undefined {
+  const bundledNode = getBundledNodePath();
+  if (!bundledNode) return undefined;
+
+  const bundleDir = path.dirname(bundledNode);
+  const os = platform();
+
+  // Check possible npm locations
+  const possiblePaths = [
+    // Unix layout: lib/node_modules/npm
+    path.join(bundleDir, 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+    // Windows layout: node_modules/npm
+    path.join(bundleDir, 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+  ];
+
+  for (const npmPath of possiblePaths) {
+    if (fsSync.existsSync(npmPath)) {
+      console.log(`[Preview] Found bundled npm at: ${npmPath}`);
+      return npmPath;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Get the path to bundled npx-cli.js
+ */
+function getBundledNpxCliPath(): string | undefined {
+  const bundledNode = getBundledNodePath();
+  if (!bundledNode) return undefined;
+
+  const bundleDir = path.dirname(bundledNode);
+
+  // Check possible npx locations
+  const possiblePaths = [
+    // Unix layout: lib/node_modules/npm
+    path.join(bundleDir, 'lib', 'node_modules', 'npm', 'bin', 'npx-cli.js'),
+    // Windows layout: node_modules/npm
+    path.join(bundleDir, 'node_modules', 'npm', 'bin', 'npx-cli.js'),
+  ];
+
+  for (const npxPath of possiblePaths) {
+    if (fsSync.existsSync(npxPath)) {
+      console.log(`[Preview] Found bundled npx at: ${npxPath}`);
+      return npxPath;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Get the path to npm executable
+ * Prioritizes bundled npm, falls back to system npm
+ */
+function getNpmPath(): { npm: string; args: string[]; useShell: boolean } {
+  const bundledNode = getBundledNodePath();
+  const bundledNpm = getBundledNpmCliPath();
+
+  if (bundledNode && bundledNpm) {
+    console.log(`[Preview] Using bundled npm: ${bundledNode} ${bundledNpm}`);
+    return { npm: bundledNode, args: [bundledNpm], useShell: false };
+  }
+
+  // Fallback to system npm
+  console.log('[Preview] Using system npm');
+  return { npm: 'npm', args: [], useShell: true };
+}
+
+/**
+ * Get the path to npx executable
+ * Prioritizes bundled npx, falls back to system npx
+ */
+function getNpxCommand(): { command: string; args: string[]; useShell: boolean } {
+  const bundledNode = getBundledNodePath();
+  const bundledNpx = getBundledNpxCliPath();
+
+  if (bundledNode && bundledNpx) {
+    console.log(`[Preview] Using bundled npx: ${bundledNode} ${bundledNpx}`);
+    return { command: bundledNode, args: [bundledNpx], useShell: false };
+  }
+
+  // Fallback to system npx
+  console.log('[Preview] Using system npx');
+  return { command: 'npx', args: [], useShell: true };
 }
 
 // Default Vite config for zero-config support
@@ -201,10 +337,15 @@ export class PreviewManager {
       console.log('[Preview] Vite not found, installing dependencies...');
       const installStart = Date.now();
 
+      // Get npm path (bundled or system)
+      const { npm: npmCmd, args: npmArgs, useShell: npmUseShell } = getNpmPath();
+      const installArgs = [...npmArgs, 'install'];
+      console.log(`[Preview] Using npm command: ${npmCmd} ${installArgs.join(' ')}`);
+
       await new Promise<void>((resolve, reject) => {
-        const npmInstall = spawn('npm', ['install'], {
+        const npmInstall = spawn(npmCmd, installArgs, {
           cwd: workDir,
-          shell: true,
+          shell: npmUseShell,
           stdio: 'pipe',
         });
 
@@ -257,12 +398,18 @@ export class PreviewManager {
     console.log(
       `[Preview] Starting Vite dev server on port ${instance.port}...`
     );
+
+    // Get npx command (bundled or system)
+    const { command: npxCmd, args: npxArgs, useShell: npxUseShell } = getNpxCommand();
+    const viteArgs = [...npxArgs, 'vite', '--host', '0.0.0.0', '--port', String(instance.port)];
+    console.log(`[Preview] Using npx command: ${npxCmd} ${viteArgs.join(' ')}`);
+
     const viteProcess = spawn(
-      'npx',
-      ['vite', '--host', '0.0.0.0', '--port', String(instance.port)],
+      npxCmd,
+      viteArgs,
       {
         cwd: workDir,
-        shell: true,
+        shell: npxUseShell,
         stdio: 'pipe',
         env: { ...process.env, FORCE_COLOR: '0' },
       }

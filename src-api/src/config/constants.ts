@@ -5,6 +5,9 @@
  * All hardcoded values should be defined here for easy management.
  */
 
+import { homedir } from 'os';
+import { join } from 'path';
+
 // ============================================================================
 // Application Identity
 // ============================================================================
@@ -14,6 +17,9 @@ export const APP_NAME = 'workany';
 
 /** Application data directory name (used in home directory) */
 export const APP_DIR_NAME = '.workany';
+
+/** Claude Code directory name (system config) */
+export const CLAUDE_DIR_NAME = '.claude';
 
 // ============================================================================
 // Server Configuration
@@ -99,4 +105,59 @@ export function getSandboxApiUrl(): string {
     process.env.SANDBOX_API_URL ||
     `http://${DEFAULT_API_HOST}:${SANDBOX_API_PORT}`
   );
+}
+
+// ============================================================================
+// Path Helpers (cross-platform compatible)
+// ============================================================================
+
+/** Get user home directory */
+export function getHomeDir(): string {
+  return homedir();
+}
+
+/** Get WorkAny app data directory */
+export function getAppDir(): string {
+  return join(homedir(), APP_DIR_NAME);
+}
+
+/** Get Claude Code directory */
+export function getClaudeDir(): string {
+  return join(homedir(), CLAUDE_DIR_NAME);
+}
+
+/** Get WorkAny skills directory */
+export function getWorkanySkillsDir(): string {
+  return join(getAppDir(), SKILLS_DIR_NAME);
+}
+
+/** Get Claude skills directory */
+export function getClaudeSkillsDir(): string {
+  return join(getClaudeDir(), SKILLS_DIR_NAME);
+}
+
+/** Get all skills directories to search */
+export function getAllSkillsDirs(): { name: string; path: string }[] {
+  return [
+    { name: 'workany', path: getWorkanySkillsDir() },
+    { name: 'claude', path: getClaudeSkillsDir() },
+  ];
+}
+
+/** Get WorkAny MCP config path */
+export function getWorkanyMcpConfigPath(): string {
+  return join(getAppDir(), MCP_CONFIG_FILE_NAME);
+}
+
+/** Get Claude settings path (contains MCP config) */
+export function getClaudeSettingsPath(): string {
+  return join(getClaudeDir(), 'settings.json');
+}
+
+/** Get all MCP config paths to search */
+export function getAllMcpConfigPaths(): { name: string; path: string }[] {
+  return [
+    { name: 'workany', path: getWorkanyMcpConfigPath() },
+    { name: 'claude', path: getClaudeSettingsPath() },
+  ];
 }

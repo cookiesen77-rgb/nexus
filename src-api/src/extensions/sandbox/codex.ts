@@ -76,18 +76,21 @@ function getBundledNodePath(): string | undefined {
   if (!execDir) return undefined;
 
   if (os === 'darwin') {
-    const resourcesDir = path.join(execDir, '..', 'Resources');
-    // Check cli-bundle first (new format)
-    const cliNodePath = path.join(resourcesDir, 'cli-bundle', 'node');
-    if (existsSync(cliNodePath)) {
-      console.log(`[CodexProvider] Found bundled node at: ${cliNodePath}`);
-      return cliNodePath;
-    }
-    // Legacy codex-bundle format
-    const legacyNodePath = path.join(resourcesDir, 'codex-bundle', 'node');
-    if (existsSync(legacyNodePath)) {
-      console.log(`[CodexProvider] Found bundled node at: ${legacyNodePath}`);
-      return legacyNodePath;
+    // Check multiple locations for cli-bundle (macOS app bundle structure)
+    const searchPaths = [
+      // Contents/MacOS/cli-bundle (where build.sh copies it)
+      path.join(execDir, 'cli-bundle', 'node'),
+      // Contents/Resources/cli-bundle (standard resource location)
+      path.join(execDir, '..', 'Resources', 'cli-bundle', 'node'),
+      // Legacy codex-bundle format in Resources
+      path.join(execDir, '..', 'Resources', 'codex-bundle', 'node'),
+    ];
+
+    for (const nodePath of searchPaths) {
+      if (existsSync(nodePath)) {
+        console.log(`[CodexProvider] Found bundled node at: ${nodePath}`);
+        return nodePath;
+      }
     }
   } else if (os === 'linux') {
     // Linux: check relative to execDir
@@ -134,37 +137,37 @@ function getBundledCodexPath(): string | undefined {
     // Also try without suffix (for development or manual placement)
     possiblePaths.push(path.join(execDir, `codex${ext}`));
 
-    // macOS app bundle: Contents/Resources/cli-bundle (unified bundle)
+    // macOS app bundle: check both MacOS and Resources directories
     if (os === 'darwin') {
       const resourcesDir = path.join(execDir, '..', 'Resources');
 
-      // Check for unified cli-bundle first (new format)
-      const cliNodePath = path.join(resourcesDir, 'cli-bundle', 'node');
-      if (existsSync(cliNodePath)) {
-        console.log(`[CodexProvider] Found cli-bundle at: ${resourcesDir}/cli-bundle`);
-        // Return the launcher if it exists
-        const launcherPath = path.join(execDir, `codex${targetTriple}`);
-        if (existsSync(launcherPath)) {
-          return launcherPath;
-        }
-        // Try without suffix
-        const launcherPathNoSuffix = path.join(execDir, 'codex');
-        if (existsSync(launcherPathNoSuffix)) {
-          return launcherPathNoSuffix;
-        }
-        // Fallback: return path to node, caller should handle this
-        return cliNodePath;
-      }
+      // Check for unified cli-bundle in multiple locations
+      const cliBundlePaths = [
+        // Contents/MacOS/cli-bundle (where build.sh copies it)
+        path.join(execDir, 'cli-bundle', 'node'),
+        // Contents/Resources/cli-bundle (standard resource location)
+        path.join(resourcesDir, 'cli-bundle', 'node'),
+        // Legacy codex-bundle format
+        path.join(resourcesDir, 'codex-bundle', 'node'),
+      ];
 
-      // Legacy: check for old codex-bundle format
-      const legacyNodePath = path.join(resourcesDir, 'codex-bundle', 'node');
-      if (existsSync(legacyNodePath)) {
-        console.log(`[CodexProvider] Found legacy codex-bundle at: ${resourcesDir}/codex-bundle`);
-        const launcherPath = path.join(execDir, `codex${targetTriple}`);
-        if (existsSync(launcherPath)) {
-          return launcherPath;
+      for (const cliNodePath of cliBundlePaths) {
+        if (existsSync(cliNodePath)) {
+          const bundleDir = path.dirname(cliNodePath);
+          console.log(`[CodexProvider] Found cli-bundle at: ${bundleDir}`);
+          // Return the launcher if it exists
+          const launcherPath = path.join(execDir, `codex${targetTriple}`);
+          if (existsSync(launcherPath)) {
+            return launcherPath;
+          }
+          // Try without suffix
+          const launcherPathNoSuffix = path.join(execDir, 'codex');
+          if (existsSync(launcherPathNoSuffix)) {
+            return launcherPathNoSuffix;
+          }
+          // Fallback: return path to node, caller should handle this
+          return cliNodePath;
         }
-        return legacyNodePath;
       }
     }
   }

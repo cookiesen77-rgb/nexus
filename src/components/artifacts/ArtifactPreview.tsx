@@ -40,7 +40,30 @@ import {
   getOpenWithApp,
   inlineAssets,
   parseCSV,
+  parseFrontmatter,
 } from './utils';
+
+// Expandable text component for long content
+function ExpandableText({ text, maxLength = 100 }: { text: string; maxLength?: number }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const needsTruncation = text.length > maxLength;
+
+  if (!needsTruncation) {
+    return <span>{text}</span>;
+  }
+
+  return (
+    <span>
+      {isExpanded ? text : `${text.slice(0, maxLength)}...`}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="ml-1 text-xs text-primary hover:underline"
+      >
+        {isExpanded ? 'Show less' : 'Show more'}
+      </button>
+    </span>
+  );
+}
 
 export function ArtifactPreview({
   artifact,
@@ -58,7 +81,7 @@ export function ArtifactPreview({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { t } = useLanguage();
+  const { t, tt } = useLanguage();
 
   // Check if live preview is available for this artifact
   const canUseLivePreview = useMemo(() => {
@@ -171,7 +194,12 @@ export function ArtifactPreview({
   };
 
   // Generate iframe content for HTML with inlined assets
+  // Only compute when in static preview mode to avoid unnecessary blob URL creation/revocation
+  const shouldShowStaticPreview = viewMode === 'preview' && previewMode === 'static';
+
   const iframeSrc = useMemo(() => {
+    // Only create blob URL when we need to show static preview
+    if (!shouldShowStaticPreview) return null;
     if (!artifact?.content || artifact.type !== 'html') return null;
 
     const enhancedHtml =
@@ -181,9 +209,9 @@ export function ArtifactPreview({
 
     const blob = new Blob([enhancedHtml], { type: 'text/html' });
     return URL.createObjectURL(blob);
-  }, [artifact?.content, artifact?.type, allArtifacts]);
+  }, [artifact?.content, artifact?.type, allArtifacts, shouldShowStaticPreview]);
 
-  // Cleanup blob URL
+  // Cleanup blob URL when it changes or on unmount
   useEffect(() => {
     return () => {
       if (iframeSrc) {
@@ -320,7 +348,7 @@ export function ArtifactPreview({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  <p>Open in {openWithApp.name}</p>
+                  <p>{tt('preview.openInApp', { app: openWithApp.name })}</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -336,7 +364,7 @@ export function ArtifactPreview({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  <p>Open in Editor</p>
+                  <p>{t.preview.openInEditor}</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -351,7 +379,7 @@ export function ArtifactPreview({
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}</p>
+                <p>{isFullscreen ? t.preview.exitFullscreen : t.preview.fullscreen}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -366,7 +394,7 @@ export function ArtifactPreview({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  <p>Close</p>
+                  <p>{t.preview.close}</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -374,7 +402,7 @@ export function ArtifactPreview({
         </TooltipProvider>
       </div>
 
-      {/* View mode toggle */}
+      {/* View mode toggle - translations handled inline */}
       {(hasCodeView || (canUseLivePreview && viewMode === 'preview')) && (
         <div className="bg-muted/20 border-border/30 flex shrink-0 items-center gap-2 border-b px-4 py-2">
           {hasPreview && hasCodeView && (
@@ -389,7 +417,7 @@ export function ArtifactPreview({
                 )}
               >
                 <Eye className="size-3.5" />
-                Preview
+                {t.preview.preview}
               </button>
               <button
                 onClick={() => setViewMode('code')}
@@ -401,7 +429,7 @@ export function ArtifactPreview({
                 )}
               >
                 <Code className="size-3.5" />
-                Code
+                {t.preview.code}
               </button>
             </div>
           )}
@@ -418,7 +446,7 @@ export function ArtifactPreview({
                 )}
               >
                 <Eye className="size-3.5" />
-                Static
+                {t.preview.static}
               </button>
               <button
                 onClick={() => {
@@ -440,7 +468,7 @@ export function ArtifactPreview({
                     livePreviewStatus === 'running' && 'text-green-500'
                   )}
                 />
-                Live
+                {t.preview.live}
                 {livePreviewStatus === 'running' && (
                   <span className="size-1.5 animate-pulse rounded-full bg-green-500" />
                 )}
@@ -451,7 +479,7 @@ export function ArtifactPreview({
           {!hasPreview && hasCodeView && (
             <div className="bg-muted text-foreground flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium">
               <Code className="size-3.5" />
-              Code
+              {t.preview.code}
             </div>
           )}
 
@@ -459,17 +487,17 @@ export function ArtifactPreview({
             <button
               onClick={handleCopy}
               className="text-muted-foreground hover:bg-accent hover:text-foreground ml-auto flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
-              title="Copy code"
+              title={t.preview.copy}
             >
               {copied ? (
                 <>
                   <Check className="size-3.5 text-emerald-500" />
-                  <span className="text-emerald-500">Copied</span>
+                  <span className="text-emerald-500">{t.preview.copied}</span>
                 </>
               ) : (
                 <>
                   <Copy className="size-3.5" />
-                  <span>Copy</span>
+                  <span>{t.preview.copy}</span>
                 </>
               )}
             </button>
@@ -577,12 +605,36 @@ function PreviewContent({
 
   // Markdown Preview
   if (artifact.type === 'markdown' && artifact.content) {
+    // Parse YAML frontmatter and content
+    const { frontmatter, content: markdownContent } = parseFrontmatter(artifact.content);
     return (
       <div className="bg-background h-full overflow-auto">
-        <div className="prose prose-sm dark:prose-invert max-w-none p-6">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {artifact.content}
-          </ReactMarkdown>
+        <div className="max-w-none p-6">
+          {/* Frontmatter Table */}
+          {frontmatter && Object.keys(frontmatter).length > 0 && (
+            <div className="mb-6 rounded-lg border border-border/50 overflow-hidden">
+              <table className="w-full text-sm">
+                <tbody>
+                  {Object.entries(frontmatter).map(([key, value]) => (
+                    <tr key={key} className="border-b border-border/30 last:border-b-0">
+                      <td className="bg-muted/30 px-4 py-2 font-medium text-muted-foreground w-32 align-top">
+                        {key}
+                      </td>
+                      <td className="px-4 py-2 text-foreground">
+                        <ExpandableText text={value} maxLength={100} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {/* Markdown Content */}
+          <div className="prose prose-sm dark:prose-invert max-w-none prose-h1:text-xl prose-h1:font-semibold prose-h2:text-lg prose-h2:font-semibold">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {markdownContent}
+            </ReactMarkdown>
+          </div>
         </div>
       </div>
     );

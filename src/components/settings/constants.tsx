@@ -36,11 +36,13 @@ export const providerIcons: Record<string, string> = {
 // Provider API Key settings URLs
 export const providerApiKeyUrls: Record<string, string> = {
   openrouter: 'https://openrouter.ai/keys',
+  volcengine: 'https://volcengine.com/L/Sq5rSgyFu_E',
 };
 
 // Default provider IDs that cannot be deleted
 export const defaultProviderIds = [
   'openrouter',
+  'volcengine',
 ];
 
 // Popular models for each provider (for suggestions)
@@ -48,13 +50,10 @@ export const providerDefaultModels: Record<string, string[]> = {
   openrouter: [
     'anthropic/claude-sonnet-4-5-20250514',
     'anthropic/claude-opus-4-5-20250514',
-    'anthropic/claude-sonnet-4-20250514',
-    'openai/gpt-4o',
   ],
   anthropic: [
     'claude-sonnet-4-5-20250514',
     'claude-opus-4-5-20250514',
-    'claude-sonnet-4-20250514',
   ],
   openai: [
     'gpt-4o',
@@ -64,8 +63,7 @@ export const providerDefaultModels: Record<string, string[]> = {
   // Custom providers - provide common model name patterns
   default: [
     'claude-sonnet-4-5-20250514',
-    'gpt-4o',
-    'deepseek-chat',
+    'claude-sonnet-4-20250514',
   ],
 };
 

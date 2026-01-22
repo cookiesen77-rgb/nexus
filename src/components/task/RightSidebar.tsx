@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   Code2,
+  ExternalLink,
   File,
   FileCode2,
   FileEdit,
@@ -17,6 +18,7 @@ import {
   FileSpreadsheet,
   FileText,
   FileType,
+  Folder,
   FolderOpen,
   FolderSearch,
   Globe,
@@ -24,12 +26,15 @@ import {
   ListTodo,
   Loader2,
   Music,
+  Package,
   Presentation,
   Search,
+  Sparkles,
   Table,
   Terminal,
   Type,
   Video,
+  Wrench,
   X,
 } from 'lucide-react';
 
@@ -62,44 +67,12 @@ interface RightSidebarProps {
   onSelectArtifact: (artifact: Artifact) => void;
   // Working directory for the current session
   workingDir?: string;
+  // Session folder path (for attachments and session files)
+  sessionFolder?: string;
   // Callback when a working file is clicked
   onSelectWorkingFile?: (file: WorkingFile) => void;
   // Version number to trigger file refresh when attachments are saved
   filesVersion?: number;
-}
-
-// Get file icon based on type
-function getFileIcon(type: Artifact['type']) {
-  switch (type) {
-    case 'html':
-      return FileCode2;
-    case 'jsx':
-      return FileCode2;
-    case 'css':
-      return FileCode2;
-    case 'json':
-      return FileText;
-    case 'image':
-      return FileImage;
-    case 'code':
-      return FileCode2;
-    case 'markdown':
-      return FileType;
-    case 'csv':
-      return Table;
-    case 'document':
-      return FileText;
-    case 'spreadsheet':
-      return FileSpreadsheet;
-    case 'presentation':
-      return Presentation;
-    case 'pdf':
-      return FileText;
-    case 'websearch':
-      return Globe;
-    default:
-      return File;
-  }
 }
 
 // Get file icon based on file extension
@@ -298,7 +271,7 @@ function getToolIcon(toolName: string) {
     case 'LSP':
       return Code2;
     default:
-      return Terminal;
+      return Wrench;
   }
 }
 
@@ -376,146 +349,6 @@ function extractMcpTools(messages: AgentMessage[]): ToolUsage[] {
   });
 
   return tools;
-}
-
-// Get artifact type from file extension
-function getArtifactType(ext: string | undefined): ArtifactType {
-  if (!ext) return 'text';
-  switch (ext) {
-    case 'html':
-    case 'htm':
-      return 'html';
-    case 'jsx':
-    case 'tsx':
-      return 'jsx';
-    case 'css':
-    case 'scss':
-    case 'less':
-      return 'css';
-    case 'json':
-      return 'json';
-    case 'md':
-    case 'markdown':
-      return 'markdown';
-    case 'csv':
-      return 'csv';
-    case 'pdf':
-      return 'pdf';
-    case 'doc':
-    case 'docx':
-      return 'document';
-    case 'xls':
-    case 'xlsx':
-      return 'spreadsheet';
-    case 'ppt':
-    case 'pptx':
-      return 'presentation';
-    case 'png':
-    case 'jpg':
-    case 'jpeg':
-    case 'gif':
-    case 'svg':
-    case 'webp':
-    case 'bmp':
-      return 'image';
-    case 'js':
-    case 'ts':
-    case 'py':
-    case 'rs':
-    case 'go':
-    case 'java':
-    case 'c':
-    case 'cpp':
-    case 'h':
-    case 'hpp':
-    case 'rb':
-    case 'php':
-    case 'swift':
-    case 'kt':
-    case 'sh':
-    case 'bash':
-    case 'zsh':
-    case 'sql':
-    case 'yaml':
-    case 'yml':
-    case 'xml':
-    case 'toml':
-      return 'code';
-    default:
-      return 'text';
-  }
-}
-
-// Extract artifacts from messages
-function extractArtifacts(messages: AgentMessage[]): Artifact[] {
-  const artifacts: Artifact[] = [];
-  const seenPaths = new Set<string>();
-
-  messages.forEach((msg) => {
-    if (msg.type === 'tool_use' && msg.name === 'Write') {
-      const input = msg.input as Record<string, unknown> | undefined;
-      const filePath = input?.file_path as string | undefined;
-      const content = input?.content as string | undefined;
-
-      if (filePath && !seenPaths.has(filePath)) {
-        seenPaths.add(filePath);
-        const filename = filePath.split('/').pop() || filePath;
-        const ext = filename.split('.').pop()?.toLowerCase();
-        const type = getArtifactType(ext);
-
-        artifacts.push({
-          id: filePath,
-          name: filename,
-          type,
-          content,
-          path: filePath,
-        });
-      }
-    }
-  });
-
-  return artifacts;
-}
-
-// Collapsible Section Component
-function CollapsibleSection({
-  title,
-  children,
-  defaultExpanded = true,
-  action,
-}: {
-  title: string;
-  children: React.ReactNode;
-  defaultExpanded?: boolean;
-  action?: React.ReactNode;
-}) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-
-  return (
-    <div className="border-border/50 border-b">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="hover:bg-accent/30 flex w-full cursor-pointer items-center justify-between px-4 py-3 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-foreground text-sm font-medium">{title}</span>
-          {action && (
-            <span onClick={(e) => e.stopPropagation()}>
-              {action}
-            </span>
-          )}
-        </div>
-        <span className="text-muted-foreground p-0.5">
-          {isExpanded ? (
-            <ChevronDown className="size-4" />
-          ) : (
-            <ChevronRight className="size-4" />
-          )}
-        </span>
-      </button>
-      {isExpanded && <div className="pb-3">{children}</div>}
-    </div>
-  );
 }
 
 // Tool Preview Modal Component
@@ -780,17 +613,17 @@ function FileTreeItem({
         )}
         style={{ paddingLeft: `${depth * 12}px` }}
       >
-        <span className="text-muted-foreground flex size-4 shrink-0 items-center justify-center">
+        <span className="text-muted-foreground/50 flex size-4 shrink-0 items-center justify-center">
           {file.isDir ? (
             isExpanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />
           ) : null}
         </span>
         {isLoading ? (
-          <Loader2 className="text-muted-foreground size-4 shrink-0 animate-spin" />
+          <Loader2 className="text-muted-foreground/60 size-3.5 shrink-0 animate-spin" />
         ) : (
-          <IconComponent className="text-muted-foreground size-4 shrink-0" />
+          <IconComponent className="text-muted-foreground/60 size-3.5 shrink-0" />
         )}
-        <span className="truncate text-sm">{file.name}</span>
+        <span className="text-foreground/80 truncate text-sm">{file.name}</span>
       </button>
       {file.isDir && isExpanded && file.children && (
         <div>
@@ -809,6 +642,56 @@ function FileTreeItem({
   );
 }
 
+
+// Empty State Component
+function EmptyState({
+  icon: Icon,
+  description,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 py-2">
+      <div className="bg-muted/30 rounded p-1.5">
+        <Icon className="text-muted-foreground/40 size-3.5" />
+      </div>
+      <p className="text-muted-foreground/60 text-xs">{description}</p>
+    </div>
+  );
+}
+
+// Collapsible Section Component
+function CollapsibleSection({
+  title,
+  children,
+  defaultExpanded = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultExpanded?: boolean;
+}) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  return (
+    <div className="border-border/50 border-b">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="hover:bg-accent/30 flex w-full cursor-pointer items-center justify-between px-4 py-3 transition-colors"
+      >
+        <span className="text-foreground text-sm font-medium">{title}</span>
+        <span className="text-muted-foreground p-0.5">
+          {isExpanded ? (
+            <ChevronDown className="size-4" />
+          ) : (
+            <ChevronRight className="size-4" />
+          )}
+        </span>
+      </button>
+      {isExpanded && <div className="px-4 pb-3">{children}</div>}
+    </div>
+  );
+}
 
 // Skills directory info
 interface SkillsDirInfo {
@@ -849,6 +732,216 @@ function extractUsedSkillNames(messages: AgentMessage[]): Set<string> {
   return skillNames;
 }
 
+// Extract external folders from messages (folders outside workingDir that were accessed)
+function extractExternalFolders(messages: AgentMessage[], workingDir?: string): string[] {
+  const foldersSet = new Set<string>();
+
+  // Helper to add folder if it's external
+  const addIfExternal = (filePath: string) => {
+    if (!filePath || !filePath.startsWith('/')) return;
+
+    // Get folder path
+    const folderPath = filePath.includes('/')
+      ? filePath.substring(0, filePath.lastIndexOf('/')) || '/'
+      : filePath;
+
+    // Only add if it's not within workingDir
+    if (folderPath && (!workingDir || !filePath.startsWith(workingDir))) {
+      foldersSet.add(folderPath);
+    }
+  };
+
+  // Helper to extract paths from Bash command
+  const extractPathsFromCommand = (command: string) => {
+    // Only extract from file operation commands
+    const fileOpCommands = ['rm', 'mv', 'cp', 'mkdir', 'touch', 'cat', 'ls', 'find', 'open'];
+    const commandLower = command.toLowerCase().trim();
+
+    // Check if command starts with a file operation
+    const isFileOp = fileOpCommands.some(op =>
+      commandLower.startsWith(op + ' ') || commandLower.includes(' ' + op + ' ')
+    );
+    if (!isFileOp) return;
+
+    // Folders to ignore (system/hidden folders)
+    const ignoredFolders = ['Library', '.cache', '.npm', '.config', 'node_modules', '.git', '.Trash'];
+
+    // Match absolute paths (starting with /) or home paths (starting with ~)
+    const pathRegex = /(?:^|[\s"'=])((?:~|\/)[^\s"'<>|&;]+)/g;
+    let match;
+    while ((match = pathRegex.exec(command)) !== null) {
+      let path = match[1].trim();
+      // Clean up trailing punctuation
+      path = path.replace(/[,;:]+$/, '');
+
+      // Skip ignored folders
+      const pathParts = path.split('/');
+      if (pathParts.some(part => ignoredFolders.includes(part))) {
+        continue;
+      }
+
+      if (path.startsWith('~')) {
+        // For ~ paths, add as-is (will be displayed with ~)
+        const folderPath = path.includes('/')
+          ? path.substring(0, path.lastIndexOf('/')) || '~'
+          : path;
+        if (folderPath && folderPath !== '~') {
+          foldersSet.add(folderPath);
+        }
+      } else if (path.startsWith('/')) {
+        addIfExternal(path);
+      }
+    }
+  };
+
+  messages.forEach((msg) => {
+    if (msg.type !== 'tool_use') return;
+
+    const input = msg.input as Record<string, unknown> | undefined;
+    if (!input) return;
+
+    switch (msg.name) {
+      case 'Read':
+      case 'Write':
+      case 'Edit': {
+        const filePath = input.file_path as string | undefined;
+        if (filePath) addIfExternal(filePath);
+        break;
+      }
+      case 'Glob': {
+        // Glob has 'path' parameter for directory
+        const path = input.path as string | undefined;
+        if (path) addIfExternal(path);
+        break;
+      }
+      case 'Grep': {
+        // Grep has 'path' parameter
+        const path = input.path as string | undefined;
+        if (path) addIfExternal(path);
+        break;
+      }
+      case 'Bash': {
+        // Try to extract paths from bash command
+        const command = input.command as string | undefined;
+        if (command) extractPathsFromCommand(command);
+        break;
+      }
+    }
+  });
+
+  return Array.from(foldersSet);
+}
+
+// Get file icon based on artifact type
+function getFileIcon(type: Artifact['type']) {
+  switch (type) {
+    case 'html':
+      return FileCode2;
+    case 'jsx':
+      return FileCode2;
+    case 'css':
+      return FileCode2;
+    case 'json':
+      return FileText;
+    case 'image':
+      return FileImage;
+    case 'code':
+      return FileCode2;
+    case 'markdown':
+      return FileType;
+    case 'csv':
+      return Table;
+    case 'document':
+      return FileText;
+    case 'spreadsheet':
+      return FileSpreadsheet;
+    case 'presentation':
+      return Presentation;
+    case 'pdf':
+      return FileText;
+    case 'websearch':
+      return Globe;
+    default:
+      return File;
+  }
+}
+
+// Get artifact type from file extension
+function getArtifactType(ext: string | undefined): ArtifactType {
+  if (!ext) return 'text';
+  switch (ext) {
+    case 'html':
+    case 'htm':
+      return 'html';
+    case 'jsx':
+    case 'tsx':
+      return 'jsx';
+    case 'css':
+    case 'scss':
+    case 'less':
+      return 'css';
+    case 'json':
+      return 'json';
+    case 'md':
+    case 'markdown':
+      return 'markdown';
+    case 'csv':
+      return 'csv';
+    case 'pdf':
+      return 'pdf';
+    case 'doc':
+    case 'docx':
+      return 'document';
+    case 'xls':
+    case 'xlsx':
+      return 'spreadsheet';
+    case 'ppt':
+    case 'pptx':
+      return 'presentation';
+    case 'png':
+    case 'jpg':
+    case 'jpeg':
+    case 'gif':
+    case 'svg':
+    case 'webp':
+    case 'bmp':
+      return 'image';
+    default:
+      return 'code';
+  }
+}
+
+// Extract artifacts from messages
+function extractArtifacts(messages: AgentMessage[]): Artifact[] {
+  const artifacts: Artifact[] = [];
+  const seenPaths = new Set<string>();
+
+  messages.forEach((msg) => {
+    if (msg.type === 'tool_use' && msg.name === 'Write') {
+      const input = msg.input as Record<string, unknown> | undefined;
+      const filePath = input?.file_path as string | undefined;
+      const content = input?.content as string | undefined;
+
+      if (filePath && !seenPaths.has(filePath)) {
+        seenPaths.add(filePath);
+        const filename = filePath.split('/').pop() || filePath;
+        const ext = filename.split('.').pop()?.toLowerCase();
+        const type = getArtifactType(ext);
+
+        artifacts.push({
+          id: filePath,
+          name: filename,
+          type,
+          content,
+          path: filePath,
+        });
+      }
+    }
+  });
+
+  return artifacts;
+}
+
 export function RightSidebar({
   messages,
   isRunning: _isRunning,
@@ -856,6 +949,7 @@ export function RightSidebar({
   selectedArtifact,
   onSelectArtifact,
   workingDir,
+  sessionFolder: _sessionFolder,
   onSelectWorkingFile,
   filesVersion = 0,
 }: RightSidebarProps) {
@@ -867,6 +961,8 @@ export function RightSidebar({
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [skillsDirs, setSkillsDirs] = useState<{ name: string; files: WorkingFile[] }[]>([]);
   const [loadingSkills, setLoadingSkills] = useState(false);
+  const [outputExpanded, setOutputExpanded] = useState(true);
+  const [editedExpanded, setEditedExpanded] = useState(true);
 
   // Read directory via API (uses Node.js fs on backend)
   async function readDirViaApi(dirPath: string): Promise<WorkingFile[]> {
@@ -893,7 +989,7 @@ export function RightSidebar({
       function addExpandedFlag(files: WorkingFile[], depth = 0): WorkingFile[] {
         return files.map((file) => ({
           ...file,
-          isExpanded: depth === 0, // Auto-expand first level
+          isExpanded: false, // Default all folders to collapsed
           children: file.children ? addExpandedFlag(file.children, depth + 1) : undefined,
         }));
       }
@@ -971,6 +1067,7 @@ export function RightSidebar({
     loadSkillsFiles();
   }, [usedSkillNames.size]); // Re-run when used skills change
 
+  // Extract artifacts from messages
   const internalArtifacts = extractArtifacts(messages);
   const artifacts =
     externalArtifacts.length > 0 ? externalArtifacts : internalArtifacts;
@@ -988,14 +1085,27 @@ export function RightSidebar({
     : mcpTools.slice(0, DEFAULT_VISIBLE_COUNT);
   const hasMoreTools = mcpTools.length > DEFAULT_VISIBLE_COUNT;
 
-  // Open working directory in system file explorer
-  const handleOpenWorkingDir = async () => {
-    if (!workingDir) return;
+  // Extract external folders (folders outside workingDir that were accessed)
+  // Extract and deduplicate external folders (keep only parent paths)
+  const externalFoldersRaw = extractExternalFolders(messages, workingDir);
+  const externalFolders = externalFoldersRaw.filter((folder) => {
+    // Remove if another folder is a parent of this one
+    return !externalFoldersRaw.some(
+      (other) => other !== folder && folder.startsWith(other + '/')
+    );
+  });
+
+  // Get display path (shorten to folder name only)
+  const getFolderName = (path: string) => path.split('/').pop() || path;
+
+  // Open folder in system
+  const handleOpenFolder = async (folderPath: string) => {
     try {
+      // Handle ~ paths - let backend resolve it
       const response = await fetch(`${API_URL}/files/open`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: workingDir }),
+        body: JSON.stringify({ path: folderPath, expandHome: true }),
       });
       const data = await response.json();
       if (!data.success) {
@@ -1007,190 +1117,241 @@ export function RightSidebar({
   };
 
   return (
-    <div className="bg-background flex h-full flex-col overflow-y-auto">
-      {/* 1. Working Files Section */}
-      <CollapsibleSection
-        title={t.task.workingFiles}
-        defaultExpanded={true}
-        action={
-          workingDir ? (
+    <div className="bg-background flex h-full flex-col overflow-y-auto overflow-x-hidden">
+      {/* 1. Workspace Section */}
+      <CollapsibleSection title={t.task.workspace || 'Workspace'} defaultExpanded={true}>
+        {/* Output folder subsection */}
+        <div className="mb-3 mt-1">
+          <div className="flex items-center gap-1 mb-1">
             <button
-              onClick={handleOpenWorkingDir}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-              title={t.task.openInFinder}
+              onClick={() => setOutputExpanded(!outputExpanded)}
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
             >
-              <FolderOpen className="size-3.5" />
+              {outputExpanded ? (
+                <ChevronDown className="size-3" />
+              ) : (
+                <ChevronRight className="size-3" />
+              )}
+              <span className="text-xs font-medium">
+                {t.task.outputFolder || 'Output'}
+              </span>
             </button>
-          ) : null
-        }
-      >
-        <div className="px-4">
-          {!workingDir ? (
-            <p className="text-muted-foreground py-2 text-sm">
-              {t.task.waitingForTask}
-            </p>
-          ) : loadingFiles ? (
-            <div className="text-muted-foreground flex items-center gap-2 py-2">
-              <Loader2 className="size-4 animate-spin" />
-              <span className="text-sm">{t.common.loading}</span>
-            </div>
-          ) : workingFiles.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-sm">{t.task.noFiles}</p>
-          ) : (
-            <div className="max-h-[250px] space-y-0.5 overflow-y-auto">
-              {workingFiles.map((file) => (
-                <FileTreeItem
-                  key={file.path}
-                  file={file}
-                  onSelectFile={onSelectWorkingFile}
-                  onSelectArtifact={onSelectArtifact}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </CollapsibleSection>
-
-      {/* 2. Artifacts Section */}
-      <CollapsibleSection title={t.task.artifacts}>
-        <div className="px-4">
-          {artifacts.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-sm">{t.task.noArtifacts}</p>
-          ) : (
+            {workingDir && (
+              <button
+                onClick={() => handleOpenFolder(workingDir)}
+                className="ml-auto text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                title={t.task.openInFinder}
+              >
+                <ExternalLink className="size-3" />
+              </button>
+            )}
+          </div>
+          {outputExpanded && (
             <>
-              <div className={cn(
-                'space-y-1',
-                showAllArtifacts && 'max-h-[300px] overflow-y-auto'
-              )}>
-                {visibleArtifacts.map((artifact) => {
-                  const IconComponent = getFileIcon(artifact.type);
-                  const isSelected = selectedArtifact?.id === artifact.id;
-
-                  return (
-                    <button
-                      key={artifact.id}
-                      onClick={() => onSelectArtifact(artifact)}
-                      className={cn(
-                        'flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors',
-                        isSelected
-                          ? 'bg-accent text-accent-foreground'
-                          : 'hover:bg-accent/50'
-                      )}
-                    >
-                      <IconComponent className="text-muted-foreground size-4 shrink-0" />
-                      <span className="truncate text-sm">{artifact.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {hasMoreArtifacts && (
-                <button
-                  onClick={() => setShowAllArtifacts(!showAllArtifacts)}
-                  className="text-muted-foreground hover:text-foreground w-full py-2 text-center text-xs transition-colors"
-                >
-                  {showAllArtifacts
-                    ? 'Show less'
-                    : `Show ${artifacts.length - 10} more`}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </CollapsibleSection>
-
-      {/* 3. Tools Section - MCP tools only */}
-      <CollapsibleSection title={t.task.tools} defaultExpanded={false}>
-        <div className="px-4">
-          {mcpTools.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-sm">{t.task.noTools}</p>
-          ) : (
-            <>
-              <div className={cn(
-                'space-y-1',
-                showAllTools && 'max-h-[300px] overflow-y-auto'
-              )}>
-                {visibleTools.map((tool) => {
-                  const IconComponent = getToolIcon(tool.name);
-                  const info = getSkillMCPInfo(tool.name);
-                  return (
-                    <button
-                      key={tool.id}
-                      onClick={() => setSelectedTool(tool)}
-                      className={cn(
-                        'group flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors',
-                        'hover:bg-accent/50',
-                        tool.isError && 'text-red-400'
-                      )}
-                    >
-                      <IconComponent
-                        className={cn(
-                          'size-4 shrink-0',
-                          tool.isError ? 'text-red-400' : 'text-muted-foreground'
-                        )}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <span className="block truncate text-sm">
-                          {tool.displayName}
-                        </span>
-                        <span className="text-muted-foreground text-xs">
-                          {info.category}
-                        </span>
-                      </div>
-                      {tool.isError && (
-                        <span className="shrink-0 rounded bg-red-500/10 px-1 py-0.5 text-[10px] text-red-500">
-                          Error
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              {hasMoreTools && (
-                <button
-                  onClick={() => setShowAllTools(!showAllTools)}
-                  className="text-muted-foreground hover:text-foreground w-full py-2 text-center text-xs transition-colors"
-                >
-                  {showAllTools
-                    ? 'Show less'
-                    : `Show ${mcpTools.length - DEFAULT_VISIBLE_COUNT} more`}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </CollapsibleSection>
-
-      {/* 4. Skills Section - Skills used during conversation (show folder contents) */}
-      <CollapsibleSection title={t.task.skills} defaultExpanded={false}>
-        <div className="px-4">
-          {loadingSkills ? (
-            <div className="text-muted-foreground flex items-center gap-2 py-2">
-              <Loader2 className="size-4 animate-spin" />
-              <span className="text-sm">{t.common.loading}</span>
-            </div>
-          ) : skillsDirs.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-sm">
-              {t.task.noSkills}
-            </p>
-          ) : (
-            <div className="max-h-[300px] space-y-3 overflow-y-auto">
-              {skillsDirs.map((dir) => (
-                <div key={dir.name}>
-                  <div className="text-muted-foreground mb-1 text-xs font-medium uppercase">
-                    {dir.name === 'claude' ? '~/.claude/skills' : '~/.workany/skills'}
-                  </div>
-                  {dir.files.map((file) => (
+              {!workingDir ? (
+                <p className="text-muted-foreground py-1 text-sm">
+                  {t.task.waitingForTask}
+                </p>
+              ) : loadingFiles ? (
+                <div className="text-muted-foreground flex items-center gap-2 py-1">
+                  <Loader2 className="size-4 animate-spin" />
+                  <span className="text-sm">{t.common.loading}</span>
+                </div>
+              ) : workingFiles.length === 0 ? (
+                <EmptyState icon={Folder} description={t.task.outputsDesc} />
+              ) : (
+                <div className="max-h-[200px] space-y-0.5 overflow-y-auto">
+                  {workingFiles.map((file) => (
                     <FileTreeItem
                       key={file.path}
                       file={file}
+                      onSelectFile={onSelectWorkingFile}
                       onSelectArtifact={onSelectArtifact}
                     />
                   ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
+
+        {/* Edited folders subsection */}
+        {externalFolders.length > 0 && (
+          <div>
+            <div className="flex items-center gap-1 mb-1">
+              <button
+                onClick={() => setEditedExpanded(!editedExpanded)}
+                className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {editedExpanded ? (
+                  <ChevronDown className="size-3" />
+                ) : (
+                  <ChevronRight className="size-3" />
+                )}
+                <span className="text-xs font-medium">
+                  {t.task.editedFolders || 'Edited'}
+                </span>
+              </button>
+            </div>
+            {editedExpanded && (
+              <div className="space-y-0.5">
+                {externalFolders.map((folder) => (
+                  <button
+                    key={folder}
+                    onClick={() => handleOpenFolder(folder)}
+                    className="hover:bg-accent/50 flex w-full items-center gap-1.5 rounded-md py-1 text-left transition-colors"
+                  >
+                    <span className="size-4 shrink-0" />
+                    <FolderOpen className="text-muted-foreground/60 size-3.5 shrink-0" />
+                    <span className="text-foreground/80 truncate text-sm">
+                      {getFolderName(folder)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </CollapsibleSection>
+
+      {/* 2. Artifacts Section */}
+      <CollapsibleSection title={t.task.artifacts} defaultExpanded={true}>
+        {artifacts.length === 0 ? (
+          <EmptyState icon={Package} description={t.task.noArtifacts} />
+        ) : (
+          <>
+            <div className={cn(
+              'space-y-1',
+              showAllArtifacts && 'max-h-[300px] overflow-y-auto'
+            )}>
+              {visibleArtifacts.map((artifact) => {
+                const IconComponent = getFileIcon(artifact.type);
+                const isSelected = selectedArtifact?.id === artifact.id;
+
+                return (
+                  <button
+                    key={artifact.id}
+                    onClick={() => onSelectArtifact(artifact)}
+                    className={cn(
+                      'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left transition-colors',
+                      isSelected
+                        ? 'bg-accent/60'
+                        : 'hover:bg-accent/30'
+                    )}
+                  >
+                    <IconComponent className={cn('size-3.5 shrink-0', isSelected ? 'text-foreground/70' : 'text-muted-foreground/60')} />
+                    <span className={cn('truncate text-sm', isSelected ? 'text-foreground' : 'text-foreground/80')}>{artifact.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {hasMoreArtifacts && (
+              <button
+                onClick={() => setShowAllArtifacts(!showAllArtifacts)}
+                className="text-muted-foreground hover:text-foreground w-full py-2 text-center text-xs transition-colors"
+              >
+                {showAllArtifacts
+                  ? 'Show less'
+                  : `Show ${artifacts.length - 10} more`}
+              </button>
+            )}
+          </>
+        )}
+      </CollapsibleSection>
+
+      {/* 3. Tools Section - MCP tools */}
+      <CollapsibleSection title={t.task.tools} defaultExpanded={false}>
+        {mcpTools.length === 0 ? (
+          <EmptyState icon={Wrench} description={t.task.noTools} />
+        ) : (
+          <>
+            <div className={cn(
+              'space-y-1',
+              showAllTools && 'max-h-[300px] overflow-y-auto'
+            )}>
+              {visibleTools.map((tool) => {
+                const IconComponent = getToolIcon(tool.name);
+                return (
+                  <button
+                    key={tool.id}
+                    onClick={() => setSelectedTool(tool)}
+                    className={cn(
+                      'group flex w-full cursor-pointer items-center gap-1.5 rounded-md py-1 text-left transition-colors',
+                      'hover:bg-accent/50',
+                      tool.isError && 'text-red-400'
+                    )}
+                  >
+                    <IconComponent
+                      className={cn(
+                        'size-3.5 shrink-0',
+                        tool.isError ? 'text-red-400' : 'text-muted-foreground/60'
+                      )}
+                    />
+                    <span className="text-foreground/80 truncate text-sm">
+                      {tool.displayName}
+                    </span>
+                    {tool.isError && (
+                      <span className="shrink-0 rounded bg-red-500/10 px-1 py-0.5 text-[10px] text-red-500">
+                        Error
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {hasMoreTools && (
+              <button
+                onClick={() => setShowAllTools(!showAllTools)}
+                className="text-muted-foreground hover:text-foreground w-full py-2 text-center text-xs transition-colors"
+              >
+                {showAllTools
+                  ? 'Show less'
+                  : `Show ${mcpTools.length - DEFAULT_VISIBLE_COUNT} more`}
+              </button>
+            )}
+          </>
+        )}
+      </CollapsibleSection>
+
+      {/* 4. Skills Section */}
+      <CollapsibleSection title={t.task.skills} defaultExpanded={false}>
+        {loadingSkills ? (
+          <div className="text-muted-foreground flex items-center gap-2 py-2">
+            <Loader2 className="size-4 animate-spin" />
+            <span className="text-sm">{t.common.loading}</span>
+          </div>
+        ) : usedSkillNames.size === 0 ? (
+          <EmptyState icon={Sparkles} description={t.task.noSkills} />
+        ) : skillsDirs.length === 0 ? (
+          // Show skill names only if skill files couldn't be loaded
+          <div className="max-h-[300px] space-y-1 overflow-y-auto">
+            {Array.from(usedSkillNames).map((skillName) => (
+              <div
+                key={skillName}
+                className="flex items-center gap-2 rounded-md px-2 py-1.5"
+              >
+                <Sparkles className="text-muted-foreground/60 size-3.5 shrink-0" />
+                <span className="text-foreground/80 truncate text-sm">{skillName}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Show skill files/content
+          <div className="max-h-[300px] space-y-0.5 overflow-y-auto">
+            {skillsDirs.map((dir) => (
+              <div key={dir.name}>
+                {dir.files.map((file) => (
+                  <FileTreeItem
+                    key={file.path}
+                    file={{ ...file, isExpanded: false }}
+                    onSelectFile={onSelectWorkingFile}
+                    onSelectArtifact={onSelectArtifact}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
       </CollapsibleSection>
 
       {/* Tool Preview Modal */}

@@ -156,29 +156,33 @@ function TaskDetailContent() {
   const hasAutoExpandedRef = useRef(false);
 
   // Auto-expand right sidebar when there is actual content (only once)
-  // Content includes: artifacts, MCP tools, or skills (not just workingDir as it may be empty)
+  // Content includes: artifacts, working files, MCP tools, or skills
   useEffect(() => {
     // Skip if already auto-expanded
     if (hasAutoExpandedRef.current) return;
 
     // Check if there's actual content to display
-    // Note: workingDir alone doesn't count as content since the directory might be empty
     const hasArtifacts = artifacts.length > 0;
+    const hasWorkspace = !!workingDir;
+    const hasFileOps = messages.some(
+      (m) => m.type === 'tool_use' &&
+        ['Read', 'Write', 'Edit', 'Bash', 'Glob'].includes(m.name || '')
+    );
     const hasMcpTools = messages.some(
       (m) => m.type === 'tool_use' && m.name?.startsWith('mcp__')
     );
     const hasSkills = messages.some(
-      (m) => m.type === 'tool_use' && m.name?.startsWith('skill::')
+      (m) => m.type === 'tool_use' && m.name === 'Skill'
     );
 
-    const hasContent = hasArtifacts || hasMcpTools || hasSkills;
+    const hasContent = hasArtifacts || (hasWorkspace && hasFileOps) || hasMcpTools || hasSkills;
 
     // Auto-expand when content becomes available (only once)
     if (hasContent) {
       setIsRightSidebarVisible(true);
       hasAutoExpandedRef.current = true;
     }
-  }, [artifacts.length, messages]);
+  }, [artifacts.length, messages, workingDir]);
 
   // Live preview state
   const {
@@ -841,6 +845,7 @@ function TaskDetailContent() {
                 selectedArtifact={selectedArtifact}
                 onSelectArtifact={handleSelectArtifact}
                 workingDir={workingDir}
+                sessionFolder={sessionFolder || undefined}
                 filesVersion={filesVersion}
               />
             </div>

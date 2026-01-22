@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { deleteTask, getAllTasks, updateTask, type Task } from '@/shared/db';
 import { cn } from '@/shared/lib/utils';
+import { useLanguage } from '@/shared/providers/language-provider';
 import { Search } from 'lucide-react';
 
 import { LeftSidebar, SidebarProvider } from '@/components/layout';
@@ -14,8 +15,11 @@ export function LibraryPage() {
   );
 }
 
-// Format relative time
-function formatRelativeTime(dateStr: string): string {
+// Format relative time with i18n support
+function formatRelativeTime(
+  dateStr: string,
+  t: { justNow: string; minuteAgo: string; minutesAgo: string; hourAgo: string; hoursAgo: string; dayAgo: string; daysAgo: string }
+): string {
   const now = new Date();
   const date = new Date(dateStr);
   const diffMs = now.getTime() - date.getTime();
@@ -24,20 +28,21 @@ function formatRelativeTime(dateStr: string): string {
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffMinutes < 1) {
-    return 'just now';
+    return t.justNow;
   } else if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+    return (diffMinutes === 1 ? t.minuteAgo : t.minutesAgo).replace('{count}', String(diffMinutes));
   } else if (diffHours < 24) {
-    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    return (diffHours === 1 ? t.hourAgo : t.hoursAgo).replace('{count}', String(diffHours));
   } else if (diffDays === 1) {
-    return '1 day ago';
+    return t.dayAgo;
   } else {
-    return `${diffDays} days ago`;
+    return t.daysAgo.replace('{count}', String(diffDays));
   }
 }
 
 function LibraryContent() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -135,7 +140,7 @@ function LibraryContent() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search your chats..."
+                placeholder={t.library.searchPlaceholder}
                 className="border-primary/30 bg-background text-foreground placeholder:text-muted-foreground focus:border-primary h-14 w-full rounded-xl border-2 pr-4 pl-12 text-lg transition-colors focus:outline-none"
               />
             </div>
@@ -143,14 +148,13 @@ function LibraryContent() {
             {/* Count & Select */}
             <div className="mb-2 flex items-center gap-3 px-1">
               <span className="text-muted-foreground text-sm">
-                {filteredTasks.length} chat
-                {filteredTasks.length !== 1 ? 's' : ''} with Claude
+                {(filteredTasks.length === 1 ? t.library.chatsCount : t.library.chatsCountPlural).replace('{count}', String(filteredTasks.length))}
               </span>
               <button
                 onClick={handleSelectToggle}
                 className="text-primary cursor-pointer text-sm font-medium hover:underline"
               >
-                {selectMode ? 'Cancel' : 'Select'}
+                {selectMode ? t.library.cancel : t.library.select}
               </button>
             </div>
 
@@ -159,18 +163,18 @@ function LibraryContent() {
               <div className="flex items-center justify-center py-20">
                 <div className="text-muted-foreground flex items-center gap-3">
                   <div className="size-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  <span>Loading...</span>
+                  <span>{t.library.loading}</span>
                 </div>
               </div>
             ) : filteredTasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <h3 className="text-foreground mb-2 text-lg font-medium">
-                  {searchQuery ? 'No chats found' : 'No chats yet'}
+                  {searchQuery ? t.library.noChatsFound : t.library.noChatsYet}
                 </h3>
                 <p className="text-muted-foreground text-sm">
                   {searchQuery
-                    ? 'Try adjusting your search query'
-                    : 'Start a new task to begin chatting'}
+                    ? t.library.adjustSearch
+                    : t.library.startNewTask}
                 </p>
               </div>
             ) : (
@@ -212,11 +216,11 @@ function LibraryContent() {
                     )}
                     <div className="min-w-0 flex-1">
                       <h3 className="text-foreground truncate text-base font-medium">
-                        {task.prompt || 'Untitled'}
+                        {task.prompt || t.library.untitled}
                       </h3>
                       <p className="text-muted-foreground mt-0.5 text-sm">
-                        Last message{' '}
-                        {formatRelativeTime(task.updated_at || task.created_at)}
+                        {t.library.lastMessage}{' '}
+                        {formatRelativeTime(task.updated_at || task.created_at, t.library)}
                       </p>
                     </div>
                   </button>

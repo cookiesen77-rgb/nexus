@@ -974,7 +974,15 @@ export class ClaudeAgent extends BaseAgent {
 
     const formattedMessages = conversation.map((msg) => {
       const role = msg.role === 'user' ? 'User' : 'Assistant';
-      return `${role}: ${msg.content}`;
+      let messageContent = `${role}: ${msg.content}`;
+
+      // Include image references if present
+      if (msg.imagePaths && msg.imagePaths.length > 0) {
+        const imageRefs = msg.imagePaths.map((p, i) => `  - Image ${i + 1}: ${p}`).join('\n');
+        messageContent += `\n[Attached images in this message:\n${imageRefs}\nUse Read tool to view these images if needed]`;
+      }
+
+      return messageContent;
     }).join('\n\n');
 
     return `## Previous Conversation Context
@@ -1095,11 +1103,13 @@ User's request (answer this AFTER reading the images):
     const userMcpServers = await loadMcpServers();
 
     // Build query options
-    // IMPORTANT: When using custom API (like OpenRouter), do NOT include 'user' in settingSources
-    // Otherwise ~/.claude/settings.json will override our custom env vars
+    // When using custom API (like OpenRouter), do NOT include 'user' in settingSources
+    // Because ~/.claude/settings.json API config will override our env config
+    // MCP servers are loaded separately via loadMcpServers() which reads both directories
+    // Skills are loaded by Claude Code internally regardless of settingSources
     const settingSources: ('user' | 'project')[] = this.config.baseUrl
-      ? ['project']  // Custom API: only use project settings, ignore user's global config
-      : ['user', 'project'];  // Default API: use both
+      ? ['project']  // Custom API: skip user settings to avoid API config override
+      : ['user', 'project'];  // Default API: use both for full compatibility
 
     const queryOptions: Options = {
       cwd: sessionCwd,
@@ -1262,10 +1272,10 @@ If you need to create any files during planning, use this directory.
       return;
     }
 
-    // When using custom API, do NOT include 'user' in settingSources
+    // When using custom API, skip user settings to avoid API config override
     const planSettingSources: ('user' | 'project')[] = this.config.baseUrl
       ? ['project']
-      : ['project', 'user'];
+      : ['user', 'project'];
 
     const queryOptions: Options = {
       cwd: sessionCwd, // Set working directory for planning phase
@@ -1417,7 +1427,7 @@ If you need to create any files during planning, use this directory.
     const userMcpServers = await loadMcpServers();
 
     // Build query options
-    // When using custom API, do NOT include 'user' in settingSources
+    // When using custom API, skip user settings to avoid API config override
     const execSettingSources: ('user' | 'project')[] = this.config.baseUrl
       ? ['project']
       : ['user', 'project'];

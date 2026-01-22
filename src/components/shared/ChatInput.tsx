@@ -179,22 +179,34 @@ export function ChatInput({
   const convertToMessageAttachments = (): MessageAttachment[] | undefined => {
     if (attachments.length === 0) return undefined;
 
-    const result = attachments.map((a) => {
-      // Determine mimeType with fallback for clipboard pastes where file.type might be empty
-      let mimeType = a.file.type;
-      if (!mimeType && a.type === 'image') {
-        // Default to png for images without type (common for clipboard pastes)
-        mimeType = 'image/png';
-      }
+    const result = attachments
+      .filter((a) => {
+        // For images, only include if preview exists and has data
+        if (a.type === 'image') {
+          const hasPreview = a.preview && a.preview.length > 0;
+          if (!hasPreview) {
+            console.warn(`[ChatInput] Skipping image ${a.file.name}: no preview data`);
+          }
+          return hasPreview;
+        }
+        return true; // Keep non-image files
+      })
+      .map((a) => {
+        // Determine mimeType with fallback for clipboard pastes where file.type might be empty
+        let mimeType = a.file.type;
+        if (!mimeType && a.type === 'image') {
+          // Default to png for images without type (common for clipboard pastes)
+          mimeType = 'image/png';
+        }
 
-      return {
-        id: a.id,
-        type: a.type,
-        name: a.file.name,
-        data: a.preview || '',
-        mimeType,
-      };
-    });
+        return {
+          id: a.id,
+          type: a.type,
+          name: a.file.name,
+          data: a.preview || '',
+          mimeType,
+        };
+      });
 
     // Debug logging
     console.log('[ChatInput] Converting attachments:', result.length);
@@ -202,7 +214,7 @@ export function ChatInput({
       console.log(`[ChatInput] Attachment ${i}: type=${a.type}, hasData=${!!a.data}, dataLength=${a.data?.length || 0}, mimeType=${a.mimeType}`);
     });
 
-    return result;
+    return result.length > 0 ? result : undefined;
   };
 
   const handleSubmit = async () => {

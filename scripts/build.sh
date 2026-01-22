@@ -239,6 +239,53 @@ bundle_cli_tools() {
         rm -rf "$temp_dir"
     fi
 
+    # Bundle npm (includes npx) from Node.js distribution
+    log_info "Bundling npm and npx..."
+    local npm_cache_dir="$cache_dir/${node_filename}/lib/node_modules/npm"
+
+    if [ -d "$npm_cache_dir" ]; then
+        # Use cached npm
+        log_info "Using cached npm from $npm_cache_dir"
+        mkdir -p "$bundle_dir/lib/node_modules"
+        cp -r "$npm_cache_dir" "$bundle_dir/lib/node_modules/"
+    else
+        # Download Node.js again to get npm
+        log_info "Downloading Node.js distribution to extract npm..."
+        local temp_dir=$(mktemp -d)
+        cd "$temp_dir"
+
+        if [ "$node_platform" = "win" ]; then
+            if curl -fsSL "$node_url" -o node.zip 2>/dev/null; then
+                unzip -q node.zip
+                mkdir -p "$bundle_dir/node_modules"
+                cp -r "${node_filename}/node_modules/npm" "$bundle_dir/node_modules/"
+                # Cache npm for future builds
+                mkdir -p "$cache_dir/${node_filename}/lib/node_modules"
+                cp -r "${node_filename}/node_modules/npm" "$cache_dir/${node_filename}/lib/node_modules/"
+            fi
+        else
+            if curl -fsSL "$node_url" | tar xz 2>/dev/null; then
+                mkdir -p "$bundle_dir/lib/node_modules"
+                cp -r "${node_filename}/lib/node_modules/npm" "$bundle_dir/lib/node_modules/"
+                # Cache npm for future builds
+                mkdir -p "$cache_dir/${node_filename}/lib/node_modules"
+                cp -r "${node_filename}/lib/node_modules/npm" "$cache_dir/${node_filename}/lib/node_modules/"
+            fi
+        fi
+
+        cd "$PROJECT_ROOT"
+        rm -rf "$temp_dir"
+    fi
+
+    # Verify npm was bundled
+    if [ -f "$bundle_dir/lib/node_modules/npm/bin/npm-cli.js" ]; then
+        log_info "npm bundled successfully"
+    elif [ -f "$bundle_dir/node_modules/npm/bin/npm-cli.js" ]; then
+        log_info "npm bundled successfully (Windows layout)"
+    else
+        log_warn "npm bundling may have failed - Live Preview may not work without system npm"
+    fi
+
     # Verify Node.js binary
     if [ ! -f "$bundle_dir/node${node_ext}" ]; then
         log_error "Node.js binary not found"
@@ -350,6 +397,38 @@ bundle_cli_tools() {
 
     # Copy .wasm files to bundle root (some may be needed at runtime)
     cp node_modules/@anthropic-ai/claude-code/*.wasm . 2>/dev/null || true
+
+    # Sign all native modules and binaries for macOS notarization
+    # Apple notarization requires:
+    # 1. All binaries signed with Developer ID certificate
+    # 2. Secure timestamp included
+    # 3. Hardened runtime enabled
+    if [ "$node_platform" = "darwin" ] && [ "$SKIP_SIGNING" != "true" ]; then
+        log_info "Signing native modules for macOS notarization..."
+
+        # Get signing identity from environment or use default
+        local signing_identity="${APPLE_SIGNING_IDENTITY:-Developer ID Application}"
+
+        # Find and sign all binary files (.node, .dylib, rg executables)
+        find . -type f \( -name "*.node" -o -name "*.dylib" -o -name "rg" \) | while read -r binary_file; do
+            log_info "  Signing: $binary_file"
+            codesign --force --timestamp --options runtime --sign "$signing_identity" "$binary_file" 2>&1 || {
+                log_warn "  Failed to sign $binary_file, trying with specific identity..."
+                local identity=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+                if [ -n "$identity" ]; then
+                    codesign --force --timestamp --options runtime --sign "$identity" "$binary_file"
+                fi
+            }
+        done
+
+        # Also sign the Node.js binary itself
+        if [ -f "node" ]; then
+            log_info "  Signing: node binary"
+            codesign --force --timestamp --options runtime --sign "$signing_identity" "node" 2>&1 || true
+        fi
+
+        log_info "Native module signing completed"
+    fi
 
     cd "$PROJECT_ROOT"
 
@@ -715,7 +794,19 @@ recreate_dmg() {
     rm -f "$dmg_dir"/*.dmg
     mkdir -p "$dmg_dir"
 
-    hdiutil create -volname WorkAny -srcfolder "$app_path" -ov -format UDZO "$dmg_dir/$dmg_name"
+    # Create temp directory with app and Applications shortcut
+    local temp_dir=$(mktemp -d)
+    cp -R "$app_path" "$temp_dir/"
+    ln -s /Applications "$temp_dir/Applications"
+
+    # Hide .app extension in Finder
+    SetFile -a E "$temp_dir/WorkAny.app" 2>/dev/null || true
+
+    log_info "Creating DMG with Applications shortcut..."
+    hdiutil create -volname WorkAny -srcfolder "$temp_dir" -ov -format UDZO "$dmg_dir/$dmg_name"
+
+    # Clean up temp directory
+    rm -rf "$temp_dir"
 
     if [ -f "$dmg_dir/$dmg_name" ]; then
         local dmg_size=$(du -h "$dmg_dir/$dmg_name" | cut -f1)

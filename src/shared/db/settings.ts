@@ -231,6 +231,16 @@ export const defaultProviders: AIProvider[] = [
       'anthropic/claude-opus-4-5-20250514',
     ],
   },
+  {
+    id: 'volcengine',
+    name: 'Volcengine',
+    apiKey: '',
+    baseUrl: 'https://ark.cn-beijing.volces.com/api/coding',
+    enabled: true,
+    models: [
+      'ark-code-latest',
+    ],
+  },
 ];
 
 // Default settings
@@ -257,7 +267,7 @@ export const defaultSettings: Settings = {
   theme: 'system',
   accentColor: 'orange',
   backgroundStyle: 'default',
-  language: 'zh-CN',
+  language: '', // Empty string triggers system language detection on first run
 };
 
 const DB_NAME = 'sqlite:workany.db';
@@ -324,6 +334,12 @@ export async function getSettingsAsync(): Promise<Settings> {
             // Skip invalid JSON values
           }
         }
+        // Migration: Add missing default providers
+        for (const defaultProvider of defaultProviders) {
+          if (!settings.providers.find(p => p.id === defaultProvider.id)) {
+            settings.providers.push(defaultProvider);
+          }
+        }
         // Debug: Log sandbox settings loaded from database
         console.log('[Settings] Loaded from database - sandboxEnabled:', settings.sandboxEnabled, 'provider:', settings.defaultSandboxProvider);
         settingsCache = settings;
@@ -339,6 +355,12 @@ export async function getSettingsAsync(): Promise<Settings> {
     const stored = localStorage.getItem('workany_settings');
     if (stored) {
       const loadedSettings = { ...defaultSettings, ...JSON.parse(stored) };
+      // Migration: Add missing default providers
+      for (const defaultProvider of defaultProviders) {
+        if (!loadedSettings.providers.find((p: AIProvider) => p.id === defaultProvider.id)) {
+          loadedSettings.providers.push(defaultProvider);
+        }
+      }
       // Debug: Log sandbox settings loaded from localStorage
       console.log('[Settings] Loaded from localStorage - sandboxEnabled:', loadedSettings.sandboxEnabled, 'provider:', loadedSettings.defaultSandboxProvider);
       settingsCache = loadedSettings;
@@ -365,6 +387,12 @@ export function getSettings(): Settings {
     const stored = localStorage.getItem('workany_settings');
     if (stored) {
       const loadedSettings = { ...defaultSettings, ...JSON.parse(stored) };
+      // Migration: Add missing default providers
+      for (const defaultProvider of defaultProviders) {
+        if (!loadedSettings.providers.find((p: AIProvider) => p.id === defaultProvider.id)) {
+          loadedSettings.providers.push(defaultProvider);
+        }
+      }
       settingsCache = loadedSettings;
       return loadedSettings;
     }

@@ -11,6 +11,12 @@ import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
+import {
+  getAllSkillsDirs,
+  getHomeDir,
+  getWorkanySkillsDir,
+} from '@/config/constants';
+
 const execAsync = promisify(exec);
 
 const files = new Hono();
@@ -296,12 +302,7 @@ files.post('/read', async (c) => {
  * Returns paths for both ~/.workany/skills and ~/.claude/skills
  */
 files.get('/skills-dir', async (c) => {
-  const homedir = process.env.HOME || process.env.USERPROFILE || '';
-  const skillsDirs = [
-    { name: 'workany', path: path.join(homedir, '.workany', 'skills') },
-    { name: 'claude', path: path.join(homedir, '.claude', 'skills') },
-  ];
-
+  const skillsDirs = getAllSkillsDirs();
   const results: { name: string; path: string; exists: boolean }[] = [];
 
   for (const dir of skillsDirs) {
@@ -309,6 +310,8 @@ files.get('/skills-dir', async (c) => {
       const stat = await fs.stat(dir.path);
       if (stat.isDirectory()) {
         results.push({ name: dir.name, path: dir.path, exists: true });
+      } else {
+        results.push({ name: dir.name, path: dir.path, exists: false });
       }
     } catch {
       // Directory doesn't exist
@@ -320,6 +323,9 @@ files.get('/skills-dir', async (c) => {
         } catch {
           results.push({ name: dir.name, path: dir.path, exists: false });
         }
+      } else {
+        // For system directories like claude, just mark as not existing
+        results.push({ name: dir.name, path: dir.path, exists: false });
       }
     }
   }
@@ -525,14 +531,21 @@ files.post('/open-in-editor', async (c) => {
 files.post('/open', async (c) => {
   try {
     const body = await c.req.json<{ path: string }>();
-    const { path: filePath } = body;
+    let { path: filePath } = body;
 
     if (!filePath) {
       return c.json({ error: 'Path is required' }, 400);
     }
 
+    // Expand ~ to home directory
+    const homedir = getHomeDir();
+    if (filePath.startsWith('~/')) {
+      filePath = filePath.replace('~', homedir);
+    } else if (filePath === '~') {
+      filePath = homedir;
+    }
+
     // Security check: only allow opening files from home directory
-    const homedir = process.env.HOME || process.env.USERPROFILE || '';
     if (!filePath.startsWith(homedir) && !filePath.startsWith('/tmp')) {
       return c.json({ error: 'Access denied: path must be within home directory' }, 403);
     }

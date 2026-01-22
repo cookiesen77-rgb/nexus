@@ -1,13 +1,17 @@
 /**
  * MCP Config Loader
  *
- * Loads MCP server configuration from ~/.workany/mcp.json
- * and converts it to SDK-compatible format.
+ * Loads MCP server configuration from multiple sources:
+ * - ~/.workany/mcp.json (WorkAny specific)
+ * - ~/.claude/settings.json (Claude Code system config)
  */
 
 import fs from 'fs/promises';
-import { homedir } from 'os';
-import path from 'path';
+
+import {
+  getAllMcpConfigPaths,
+  getWorkanyMcpConfigPath,
+} from '@/config/constants';
 
 // MCP Server Config Types (matching SDK types)
 export interface McpStdioServerConfig {
@@ -42,74 +46,91 @@ interface WorkAnyMcpConfig {
 }
 
 /**
- * Get the path to the MCP config file
+ * Get all MCP config paths to check
  */
-export function getMcpConfigPath(): string {
-  return path.join(homedir(), '.workany', 'mcp.json');
+export function getMcpConfigPaths(): { name: string; path: string }[] {
+  return getAllMcpConfigPaths();
 }
 
 /**
- * Load MCP servers configuration from ~/.workany/mcp.json
+ * Get the primary MCP config path (for backward compatibility)
+ */
+export function getMcpConfigPath(): string {
+  return getWorkanyMcpConfigPath();
+}
+
+/**
+ * Load MCP servers from a single config file
+ */
+async function loadMcpServersFromFile(
+  configPath: string,
+  sourceName: string
+): Promise<Record<string, McpServerConfig>> {
+  try {
+    await fs.access(configPath);
+    const content = await fs.readFile(configPath, 'utf-8');
+    const config = JSON.parse(content);
+
+    // Support both formats: { mcpServers: {...} } and direct { serverName: {...} }
+    const mcpServers = config.mcpServers || config;
+
+    if (!mcpServers || typeof mcpServers !== 'object') {
+      return {};
+    }
+
+    const servers: Record<string, McpServerConfig> = {};
+
+    for (const [name, serverConfig] of Object.entries(mcpServers)) {
+      const cfg = serverConfig as Record<string, unknown>;
+      if (cfg.url) {
+        servers[name] = {
+          type: 'http',
+          url: cfg.url as string,
+          headers: cfg.headers as Record<string, string>,
+        };
+        console.log(`[MCP] Loaded HTTP server from ${sourceName}: ${name}`);
+      } else if (cfg.command) {
+        servers[name] = {
+          type: 'stdio',
+          command: cfg.command as string,
+          args: cfg.args as string[],
+          env: cfg.env as Record<string, string>,
+        };
+        console.log(`[MCP] Loaded stdio server from ${sourceName}: ${name}`);
+      }
+    }
+
+    return servers;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Load MCP servers configuration from multiple sources:
+ * - ~/.workany/mcp.json (WorkAny specific)
+ * - ~/.claude/settings.json (Claude Code system config)
  *
- * @returns Record of server name to config, or empty object if file doesn't exist
+ * @returns Record of server name to config, merged from all sources
  */
 export async function loadMcpServers(): Promise<
   Record<string, McpServerConfig>
 > {
-  const configPath = getMcpConfigPath();
+  const configPaths = getMcpConfigPaths();
+  const allServers: Record<string, McpServerConfig> = {};
 
-  try {
-    // Check if file exists
-    await fs.access(configPath);
-
-    // Read and parse config
-    const content = await fs.readFile(configPath, 'utf-8');
-    const config: WorkAnyMcpConfig = JSON.parse(content);
-
-    if (!config.mcpServers || typeof config.mcpServers !== 'object') {
-      console.log('[MCP] No mcpServers found in config');
-      return {};
-    }
-
-    // Convert to SDK-compatible format
-    const servers: Record<string, McpServerConfig> = {};
-
-    for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
-      if (serverConfig.url) {
-        // HTTP server
-        servers[name] = {
-          type: 'http',
-          url: serverConfig.url,
-          headers: serverConfig.headers,
-        };
-        console.log(`[MCP] Loaded HTTP server: ${name}`);
-      } else if (serverConfig.command) {
-        // Stdio server
-        servers[name] = {
-          type: 'stdio',
-          command: serverConfig.command,
-          args: serverConfig.args,
-          env: serverConfig.env,
-        };
-        console.log(`[MCP] Loaded stdio server: ${name}`);
-      } else {
-        console.warn(`[MCP] Invalid server config for "${name}": missing command or url`);
-      }
-    }
-
-    const serverCount = Object.keys(servers).length;
-    if (serverCount > 0) {
-      console.log(`[MCP] Loaded ${serverCount} MCP server(s) from ${configPath}`);
-    }
-
-    return servers;
-  } catch (error) {
-    // File doesn't exist or is invalid - this is expected in fresh installs
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      console.log('[MCP] No mcp.json found, skipping MCP servers');
-    } else {
-      console.warn('[MCP] Failed to load MCP config:', error);
-    }
-    return {};
+  for (const { name, path: configPath } of configPaths) {
+    const servers = await loadMcpServersFromFile(configPath, name);
+    // Merge servers, workany config takes precedence over claude
+    Object.assign(allServers, servers);
   }
+
+  const serverCount = Object.keys(allServers).length;
+  if (serverCount > 0) {
+    console.log(`[MCP] Loaded ${serverCount} MCP server(s) total`);
+  } else {
+    console.log('[MCP] No MCP servers found in any config');
+  }
+
+  return allServers;
 }

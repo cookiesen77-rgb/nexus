@@ -241,7 +241,7 @@ export function ModelSettings({
                   onChange={(e) =>
                     setNewProvider({ ...newProvider, name: e.target.value })
                   }
-                  placeholder="e.g. DeepSeek"
+                  placeholder="Claude"
                   className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring h-10 w-full rounded-lg border px-3 text-sm focus:ring-2 focus:outline-none"
                 />
               </div>
@@ -272,6 +272,21 @@ export function ModelSettings({
                     setNewProvider({ ...newProvider, baseUrl: e.target.value })
                   }
                   placeholder="https://api.example.com/v1"
+                  className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring h-10 w-full rounded-lg border px-3 text-sm focus:ring-2 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-foreground block text-sm font-medium">
+                  {t.settings.models}
+                </label>
+                <input
+                  type="text"
+                  value={newProvider.models}
+                  onChange={(e) =>
+                    setNewProvider({ ...newProvider, models: e.target.value })
+                  }
+                  placeholder={t.settings.modelsPlaceholder || 'e.g. gpt-4o'}
                   className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring h-10 w-full rounded-lg border px-3 text-sm focus:ring-2 focus:outline-none"
                 />
               </div>

@@ -134,7 +134,18 @@ agent.post('/', async (c) => {
       enabled: body.sandboxConfig.enabled,
       provider: body.sandboxConfig.provider,
     } : null,
+    hasImages: !!body.images,
+    imagesCount: body.images?.length || 0,
   });
+
+  // Debug logging for images
+  if (body.images && body.images.length > 0) {
+    body.images.forEach((img: { data: string; mimeType: string }, i: number) => {
+      console.log(`[AgentAPI] Image ${i}: mimeType=${img.mimeType}, dataLength=${img.data?.length || 0}`);
+    });
+  } else {
+    console.log('[AgentAPI] No images in request');
+  }
 
   if (!body.prompt) {
     return c.json({ error: 'prompt is required' }, 400);

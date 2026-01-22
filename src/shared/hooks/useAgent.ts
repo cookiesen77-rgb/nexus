@@ -253,6 +253,7 @@ export interface MessageAttachment {
   name: string;
   data: string; // Base64 data for images
   mimeType?: string;
+  path?: string; // File path when loaded from disk
 }
 
 export interface AgentMessage {
@@ -307,6 +308,7 @@ export interface TaskPlan {
 export interface ConversationMessage {
   role: 'user' | 'assistant';
   content: string;
+  imagePaths?: string[]; // Image file paths for context
 }
 
 export type AgentPhase =
@@ -680,7 +682,17 @@ function buildConversationHistory(
         });
         currentAssistantContent = '';
       }
-      history.push({ role: 'user', content: msg.content || '' });
+
+      // Extract image paths from attachments if present
+      const imagePaths = msg.attachments
+        ?.filter((a) => a.type === 'image' && a.path)
+        .map((a) => a.path as string);
+
+      history.push({
+        role: 'user',
+        content: msg.content || '',
+        imagePaths: imagePaths && imagePaths.length > 0 ? imagePaths : undefined,
+      });
     } else if (msg.type === 'text') {
       // Accumulate assistant text
       currentAssistantContent += (msg.content || '') + '\n';
@@ -1521,13 +1533,22 @@ export function useAgent(): UseAgentReturn {
         const sandboxConfig = getSandboxConfig();
         const skillsPath = getSkillsPath();
 
-        // Prepare images for API (only send image attachments)
+        // Prepare images for API (only send image attachments with actual data)
         const images = attachments
-          ?.filter((a) => a.type === 'image')
+          ?.filter((a) => a.type === 'image' && a.data && a.data.length > 0)
           .map((a) => ({
             data: a.data,
             mimeType: a.mimeType || 'image/png',
           }));
+
+        // Debug logging for image attachments
+        if (attachments && attachments.length > 0) {
+          console.log('[useAgent] continueConversation attachments:', attachments.length);
+          attachments.forEach((att, i) => {
+            console.log(`[useAgent] Attachment ${i}: type=${att.type}, hasData=${!!att.data}, dataLength=${att.data?.length || 0}`);
+          });
+          console.log('[useAgent] Valid images for API:', images?.length || 0);
+        }
 
         // Send conversation with full history
         const response = await fetchWithRetry(`${AGENT_SERVER_URL}/agent`, {

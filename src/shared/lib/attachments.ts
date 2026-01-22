@@ -214,6 +214,7 @@ export async function referenceToAttachment(
     name: ref.name,
     data,
     mimeType: ref.mimeType,
+    path: ref.path, // Preserve path for conversation history
   };
 }
 
