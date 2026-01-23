@@ -106,11 +106,10 @@ sandbox.get('/debug/codex-paths', async (c) => {
   const pathsToCheck = [
     path.join(execDir, `codex${targetTriple}`),
     path.join(execDir, 'codex'),
+    // Tauri resources location
+    path.join(execDir, '..', 'Resources', '_up_', 'src-api', 'dist', 'cli-bundle', 'node'),
     path.join(execDir, '..', 'Resources', 'cli-bundle', 'node'),
     path.join(execDir, 'cli-bundle', 'node'),
-    // Legacy paths
-    path.join(execDir, '..', 'Resources', 'codex-bundle', 'node'),
-    path.join(execDir, 'codex-bundle', 'node'),
     '/usr/local/bin/codex',
   ];
 

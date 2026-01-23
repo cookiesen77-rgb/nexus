@@ -79,12 +79,12 @@ function getBundledNodePath(): string | undefined {
   if (os === 'darwin') {
     // Check multiple locations for cli-bundle (macOS app bundle structure)
     const searchPaths = [
+      // Contents/Resources/_up_/src-api/dist/cli-bundle (Tauri resources location)
+      path.join(execDir, '..', 'Resources', '_up_', 'src-api', 'dist', 'cli-bundle', 'node'),
       // Contents/MacOS/cli-bundle (where build.sh copies it)
       path.join(execDir, 'cli-bundle', 'node'),
       // Contents/Resources/cli-bundle (standard resource location)
       path.join(execDir, '..', 'Resources', 'cli-bundle', 'node'),
-      // Legacy codex-bundle format in Resources
-      path.join(execDir, '..', 'Resources', 'codex-bundle', 'node'),
     ];
 
     for (const nodePath of searchPaths) {
@@ -144,12 +144,12 @@ function getBundledCodexPath(): string | undefined {
 
       // Check for unified cli-bundle in multiple locations
       const cliBundlePaths = [
+        // Contents/Resources/_up_/src-api/dist/cli-bundle (Tauri resources location)
+        path.join(resourcesDir, '_up_', 'src-api', 'dist', 'cli-bundle', 'node'),
         // Contents/MacOS/cli-bundle (where build.sh copies it)
         path.join(execDir, 'cli-bundle', 'node'),
         // Contents/Resources/cli-bundle (standard resource location)
         path.join(resourcesDir, 'cli-bundle', 'node'),
-        // Legacy codex-bundle format
-        path.join(resourcesDir, 'codex-bundle', 'node'),
       ];
 
       for (const cliNodePath of cliBundlePaths) {

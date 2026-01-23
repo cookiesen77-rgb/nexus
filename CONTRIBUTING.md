@@ -185,6 +185,6 @@ By contributing to this project, you agree that:
 If you have any questions, feel free to reach out:
 
 - GitHub Issues: [github.com/workany-ai/workany/issues](https://github.com/workany-ai/workany/issues)
-- Email: support@workany.ai
+- Email: hello@workany.ai
 
 Thank you for your contributions!

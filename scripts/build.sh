@@ -623,10 +623,20 @@ build_mac_intel() {
     # Add target if not exists
     rustup target add "$target" 2>/dev/null || true
 
-    pnpm tauri build --target "$target"
+    # IMPORTANT: When signing is enabled, we must disable Tauri's built-in notarization
+    # because Resources/cli-bundle binaries need to be signed AFTER Tauri copies them.
+    if [ "$SKIP_SIGNING" != "true" ] && [ "$BUNDLE_CLI" = "true" ]; then
+        log_info "Disabling Tauri notarization (will notarize manually after signing cli-bundle)..."
+        TAURI_SKIP_NOTARIZATION=true pnpm tauri build --target "$target"
+    else
+        pnpm tauri build --target "$target"
+    fi
 
     # Sign cli-bundle in app bundle Resources (after Tauri build)
     sign_cli_bundle_in_app "$target"
+
+    # Notarize the app (after all binaries are signed)
+    notarize_app "$target"
 
     # Recreate DMG with bundle included
     recreate_dmg "$target"
@@ -715,6 +725,90 @@ sign_cli_bundle_in_app() {
         log_info "App bundle signature verified successfully"
     else
         log_warn "App bundle signature verification had warnings (may still work)"
+    fi
+}
+
+# Notarize the app bundle (after all signing is complete)
+notarize_app() {
+    local target="$1"
+
+    if [ "$SKIP_SIGNING" = "true" ]; then
+        return 0
+    fi
+
+    if [ "$BUNDLE_CLI" != "true" ]; then
+        # If no cli-bundle, Tauri already handled notarization
+        return 0
+    fi
+
+    log_info "Notarizing app bundle..."
+
+    local app_path=""
+    case "$target" in
+        aarch64-apple-darwin)
+            app_path="$PROJECT_ROOT/src-tauri/target/$target/release/bundle/macos/WorkAny.app"
+            ;;
+        x86_64-apple-darwin)
+            app_path="$PROJECT_ROOT/src-tauri/target/$target/release/bundle/macos/WorkAny.app"
+            ;;
+        current)
+            local arch=$(uname -m)
+            if [ "$arch" = "arm64" ]; then
+                app_path="$PROJECT_ROOT/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/WorkAny.app"
+            else
+                app_path="$PROJECT_ROOT/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/WorkAny.app"
+            fi
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+
+    if [ ! -d "$app_path" ]; then
+        log_warn "App bundle not found at $app_path"
+        return 0
+    fi
+
+    # Create a zip for notarization
+    local temp_zip=$(mktemp).zip
+    log_info "Creating zip for notarization..."
+    ditto -c -k --keepParent "$app_path" "$temp_zip"
+
+    # Submit for notarization
+    local notarize_output
+    if [ -n "$APPLE_ID" ] && [ -n "$APPLE_PASSWORD" ] && [ -n "$APPLE_TEAM_ID" ]; then
+        log_info "Submitting to Apple notary service (this may take a few minutes)..."
+        notarize_output=$(xcrun notarytool submit "$temp_zip" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait 2>&1) || true
+    else
+        # Try keychain profile as fallback
+        log_info "Submitting to Apple notary service using keychain profile..."
+        notarize_output=$(xcrun notarytool submit "$temp_zip" \
+            --keychain-profile "notarytool-profile" \
+            --wait 2>&1) || {
+            log_warn "Notarization failed. Set APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID or configure keychain profile."
+            rm -f "$temp_zip"
+            return 0
+        }
+    fi
+
+    rm -f "$temp_zip"
+
+    if echo "$notarize_output" | grep -q "status: Accepted"; then
+        log_info "App notarization successful!"
+
+        # Staple the notarization ticket to the app
+        log_info "Stapling notarization ticket to app..."
+        xcrun stapler staple "$app_path" || {
+            log_warn "Failed to staple app, but notarization was successful"
+        }
+    else
+        log_error "App notarization failed:"
+        echo "$notarize_output"
+        return 1
     fi
 }
 
@@ -841,10 +935,21 @@ build_mac_arm() {
     # Add target if not exists
     rustup target add "$target" 2>/dev/null || true
 
-    pnpm tauri build --target "$target"
+    # IMPORTANT: When signing is enabled, we must disable Tauri's built-in notarization
+    # because Resources/cli-bundle binaries need to be signed AFTER Tauri copies them.
+    # Flow: Tauri build -> sign cli-bundle in Resources -> re-sign app -> manual notarize
+    if [ "$SKIP_SIGNING" != "true" ] && [ "$BUNDLE_CLI" = "true" ]; then
+        log_info "Disabling Tauri notarization (will notarize manually after signing cli-bundle)..."
+        TAURI_SKIP_NOTARIZATION=true pnpm tauri build --target "$target"
+    else
+        pnpm tauri build --target "$target"
+    fi
 
     # Sign cli-bundle in app bundle Resources (after Tauri build)
     sign_cli_bundle_in_app "$target"
+
+    # Notarize the app (after all binaries are signed)
+    notarize_app "$target"
 
     # Recreate DMG with bundle included
     recreate_dmg "$target"
@@ -864,10 +969,22 @@ build_current() {
     bundle_cli_tools "current"
     update_tauri_config
 
-    pnpm tauri build
+    # IMPORTANT: When signing is enabled, we must disable Tauri's built-in notarization
+    if [ "$SKIP_SIGNING" != "true" ] && [ "$BUNDLE_CLI" = "true" ]; then
+        log_info "Disabling Tauri notarization (will notarize manually after signing cli-bundle)..."
+        TAURI_SKIP_NOTARIZATION=true pnpm tauri build
+    else
+        pnpm tauri build
+    fi
 
     # Sign cli-bundle in app bundle Resources
     sign_cli_bundle_in_app "current"
+
+    # Notarize the app (after all binaries are signed)
+    notarize_app "current"
+
+    # Recreate DMG with bundle included
+    recreate_dmg "current"
 
     log_info "Build completed!"
     log_info "Output: src-tauri/target/release/bundle/"
