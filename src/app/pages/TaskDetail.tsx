@@ -1355,66 +1355,81 @@ function MessageItem({
         <div className="prose prose-sm text-foreground max-w-none min-w-0 flex-1 overflow-hidden">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
-            components={{
-              pre: ({ children }) => (
-                <pre className="bg-muted max-w-full overflow-x-auto rounded-lg p-4">
-                  {children}
-                </pre>
-              ),
-              code: ({ className, children, ...props }) => {
-                const isInline = !className;
-                if (isInline) {
+            components={
+              {
+                pre: ({ children }: { children?: React.ReactNode }) => (
+                  <pre className="bg-muted max-w-full overflow-x-auto rounded-lg p-4">
+                    {children}
+                  </pre>
+                ),
+                code: ({
+                  className,
+                  children,
+                  ...props
+                }: {
+                  className?: string;
+                  children?: React.ReactNode;
+                }) => {
+                  const isInline = !className;
+                  if (isInline) {
+                    return (
+                      <code
+                        className="bg-muted rounded px-1.5 py-0.5 text-sm"
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    );
+                  }
                   return (
-                    <code
-                      className="bg-muted rounded px-1.5 py-0.5 text-sm"
-                      {...props}
-                    >
+                    <code className={className} {...props}>
                       {children}
                     </code>
                   );
-                }
-                return (
-                  <code className={className} {...props}>
-                    {children}
-                  </code>
-                );
-              },
-              a: ({ children, href }) => (
-                <a
-                  href={href}
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    if (href) {
-                      try {
-                        const { openUrl } =
-                          await import('@tauri-apps/plugin-opener');
-                        await openUrl(href);
-                      } catch {
-                        window.open(href, '_blank');
+                },
+                a: ({
+                  children,
+                  href,
+                }: {
+                  children?: React.ReactNode;
+                  href?: string;
+                }) => (
+                  <a
+                    href={href}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (href) {
+                        try {
+                          const { openUrl } =
+                            await import('@tauri-apps/plugin-opener');
+                          await openUrl(href);
+                        } catch {
+                          window.open(href, '_blank');
+                        }
                       }
-                    }
-                  }}
-                  className="text-primary cursor-pointer hover:underline"
-                >
-                  {children}
-                </a>
-              ),
-              table: ({ children }) => (
-                <div className="overflow-x-auto">
-                  <table className="border-border border-collapse border">
+                    }}
+                    className="text-primary cursor-pointer hover:underline"
+                  >
                     {children}
-                  </table>
-                </div>
-              ),
-              th: ({ children }) => (
-                <th className="border-border bg-muted border px-3 py-2 text-left">
-                  {children}
-                </th>
-              ),
-              td: ({ children }) => (
-                <td className="border-border border px-3 py-2">{children}</td>
-              ),
-            }}
+                  </a>
+                ),
+                table: ({ children }: { children?: React.ReactNode }) => (
+                  <div className="overflow-x-auto">
+                    <table className="border-border border-collapse border">
+                      {children}
+                    </table>
+                  </div>
+                ),
+                th: ({ children }: { children?: React.ReactNode }) => (
+                  <th className="border-border bg-muted border px-3 py-2 text-left">
+                    {children}
+                  </th>
+                ),
+                td: ({ children }: { children?: React.ReactNode }) => (
+                  <td className="border-border border px-3 py-2">{children}</td>
+                ),
+              }
+            }
           >
             {message.content || ''}
           </ReactMarkdown>
