@@ -2,11 +2,11 @@
 # frozen_string_literal: true
 
 cask "nexus" do
-  arch arm: "aarch64", intel: "x64"
+  arch arm: "aarch64", intel: "fc60acb3fbd1b2883a90165ff2bfc6955bed6db830c797a0ca040f71380ae779"
 
-  version "0.1.14"
-  sha256 arm:   "5f8b4b854bb9dd2e2ced18c024cafc1286f024566feac64f7e62d130b1e75f4f",
-         intel: "REPLACE_WITH_X64_SHA256"
+  version "0.1.16"
+  sha256 arm:   "4a8c221350a9120202d42bda2d44eaea30aa8859081adfc62743a17626bad4d0",
+         intel: "fc60acb3fbd1b2883a90165ff2bfc6955bed6db830c797a0ca040f71380ae779"
 
   url "https://github.com/nexus-ai/nexus/releases/download/v#{version}/Nexus_#{version}_#{arch}.dmg",
       verified: "github.com/nexus-ai/nexus/"
