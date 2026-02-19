@@ -29,7 +29,7 @@ import { createLogger } from '@/shared/utils/logger';
 const serviceLogger = createLogger('AgentService');
 
 // Models that require OpenAI chat completions format instead of Anthropic format
-const OPENAI_FORMAT_MODELS = ['gemini-3-pro-preview', 'kimi-k2.5'];
+const OPENAI_FORMAT_MODELS = ['gemini-3-pro-preview', 'kimi-k2.5', 'gpt-5.3-codex-xhigh', 'glm-4.7'];
 
 function needsOpenAIFormat(model?: string): boolean {
   return !!model && OPENAI_FORMAT_MODELS.includes(model);
