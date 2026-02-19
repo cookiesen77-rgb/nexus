@@ -18,8 +18,6 @@ import { useLanguage } from '@/shared/providers/language-provider';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 import { categoryIcons } from './constants';
-import { AboutSettings } from './tabs/AboutSettings';
-import { AccountSettings } from './tabs/AccountSettings';
 import { DataSettings } from './tabs/DataSettings';
 import { GeneralSettings } from './tabs/GeneralSettings';
 import { MCPSettings } from './tabs/MCPSettings';
@@ -66,7 +64,6 @@ export function SettingsModal({
     'mcp',
     'skills',
     'data',
-    'about',
   ];
 
   const getCategoryLabel = (id: SettingsCategory): string => {
@@ -113,9 +110,9 @@ export function SettingsModal({
           <div className="border-border bg-muted/30 flex w-56 flex-col border-r">
             {/* Logo Header */}
             <div className="border-border flex items-center gap-2.5 border-b px-4 py-4">
-              <img src={ImageLogo} alt="Nexus" className="size-7" />
+              <img src={ImageLogo} alt="NexusWork" className="size-7" />
               <span className="text-foreground text-base font-semibold">
-                Nexus
+                NexusWork
               </span>
             </div>
 
@@ -199,8 +196,6 @@ export function SettingsModal({
               )}
 
               {activeCategory === 'data' && <DataSettings />}
-
-              {activeCategory === 'about' && <AboutSettings />}
             </div>
           </div>
         </div>

@@ -9,7 +9,6 @@ export default {
   provider: '供应商',
   mcp: 'MCP',
   connector: '连接器',
-  about: '关于',
 
   // Account
   manageProfile: '管理您的个人资料',

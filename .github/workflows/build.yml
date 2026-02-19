@@ -144,7 +144,7 @@ jobs:
         run: |
           cd src-api
           mkdir -p dist
-          bun build src/index.ts --compile --target=${{ matrix.bun_target }} --outfile dist/nexus-api-${{ matrix.rust_target }}
+          bun build src/index.ts --compile --target=${{ matrix.bun_target }} --outfile dist/nexuswork-api-${{ matrix.rust_target }}
 
       - name: Build API sidecar (Windows)
         if: steps.check.outputs.skip != 'true' && matrix.platform == 'windows'
@@ -152,7 +152,7 @@ jobs:
         run: |
           cd src-api
           mkdir -p dist
-          bun build src/index.ts --compile --target=${{ matrix.bun_target }} --outfile dist/nexus-api-${{ matrix.rust_target }}.exe
+          bun build src/index.ts --compile --target=${{ matrix.bun_target }} --outfile dist/nexuswork-api-${{ matrix.rust_target }}.exe
 
       - name: Bundle CLI tools (Unix)
         if: steps.check.outputs.skip != 'true' && matrix.platform != 'windows'
@@ -231,14 +231,14 @@ jobs:
           cd ..
 
           # Create claude launcher script using base64 decode (avoids escape issues)
-          # Supports: macOS (Resources), Linux (/usr/lib/Nexus/)
-          echo "IyEvYmluL2Jhc2gKU0NSSVBUX0RJUj0iJChjZCAiJChkaXJuYW1lICIkMCIpIiAmJiBwd2QpIgpmb3IgRElSIGluICIkU0NSSVBUX0RJUi9jbGktYnVuZGxlIiBcCiAgICAgICAgICAgIiRTQ1JJUFRfRElSL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vUmVzb3VyY2VzL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vUmVzb3VyY2VzL2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vbGliL05leHVzL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vbGliL25leHVzL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiOyBkbwogICAgaWYgWyAtZiAiJERJUi9ub2RlIiBdICYmIFsgLWQgIiRESVIvbm9kZV9tb2R1bGVzIiBdOyB0aGVuCiAgICAgICAgQlVORExFX0RJUj0iJERJUiIKICAgICAgICBicmVhawogICAgZmkKZG9uZQppZiBbIC16ICIkQlVORExFX0RJUiIgXTsgdGhlbgogICAgZWNobyAiRXJyb3I6IGNsaS1idW5kbGUgbm90IGZvdW5kLiBTZWFyY2hlZCBwYXRoczoiID4mMgogICAgZWNobyAiICAtICRTQ1JJUFRfRElSL2NsaS1idW5kbGUiID4mMgogICAgZWNobyAiICAtICRTQ1JJUFRfRElSL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiID4mMgogICAgZWNobyAiICAtICRTQ1JJUFRfRElSLy4uL1Jlc291cmNlcy9fdXBfL3NyYy1hcGkvZGlzdC9jbGktYnVuZGxlIiA+JjIKICAgIGVjaG8gIiAgLSAkU0NSSVBUX0RJUi8uLi9saWIvTmV4dXMvX3VwXy9zcmMtYXBpL2Rpc3QvY2xpLWJ1bmRsZSIgPiYyCiAgICBleGl0IDEKZmkKZXhlYyAiJEJVTkRMRV9ESVIvbm9kZSIgIiRCVU5ETEVfRElSL25vZGVfbW9kdWxlcy9AYW50aHJvcGljLWFpL2NsYXVkZS1jb2RlL2NsaS5qcyIgIiRAIgo=" | base64 -d > claude
+          # Supports: macOS (Resources), Linux (/usr/lib/NexusWork/)
+          echo "IyEvYmluL2Jhc2gKU0NSSVBUX0RJUj0iJChjZCAiJChkaXJuYW1lICIkMCIpIiAmJiBwd2QpIgpmb3IgRElSIGluICIkU0NSSVBUX0RJUi9jbGktYnVuZGxlIiBcCiAgICAgICAgICAgIiRTQ1JJUFRfRElSL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vUmVzb3VyY2VzL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vUmVzb3VyY2VzL2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vbGliL05leHVzV29yay9fdXBfL3NyYy1hcGkvZGlzdC9jbGktYnVuZGxlIiBcCiAgICAgICAgICAgIiRTQ1JJUFRfRElSLy4uL2xpYi9uZXh1c3dvcmsvX3VwXy9zcmMtYXBpL2Rpc3QvY2xpLWJ1bmRsZSI7IGRvCiAgICBpZiBbIC1mICIkRElSL25vZGUiIF0gJiYgWyAtZCAiJERJUi9ub2RlX21vZHVsZXMiIF07IHRoZW4KICAgICAgICBCVU5ETEVfRElSPSIkRElSIgogICAgICAgIGJyZWFrCiAgICBmaQpkb25lCmlmIFsgLXogIiRCVU5ETEVfRElSIiBdOyB0aGVuCiAgICBlY2hvICJFcnJvcjogY2xpLWJ1bmRsZSBub3QgZm91bmQuIFNlYXJjaGVkIHBhdGhzOiIgPiYyCiAgICBlY2hvICIgIC0gJFNDUklQVF9ESVIvY2xpLWJ1bmRsZSIgPiYyCiAgICBlY2hvICIgIC0gJFNDUklQVF9ESVIvX3VwXy9zcmMtYXBpL2Rpc3QvY2xpLWJ1bmRsZSIgPiYyCiAgICBlY2hvICIgIC0gJFNDUklQVF9ESVIvLi4vUmVzb3VyY2VzL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiID4mMgogICAgZWNobyAiICAtICRTQ1JJUFRfRElSLy4uL2xpYi9OZXh1c1dvcmsvX3VwXy9zcmMtYXBpL2Rpc3QvY2xpLWJ1bmRsZSIgPiYyCiAgICBleGl0IDEKZmkKZXhlYyAiJEJVTkRMRV9ESVIvbm9kZSIgIiRCVU5ETEVfRElSL25vZGVfbW9kdWxlcy9AYW50aHJvcGljLWFpL2NsYXVkZS1jb2RlL2NsaS5qcyIgIiRAIgo=" | base64 -d > claude
           chmod +x claude
           cp claude "claude-${{ matrix.rust_target }}"
 
           # Create codex launcher script using base64 decode
-          # Supports: macOS (Resources), Linux (/usr/lib/Nexus/)
-          echo "IyEvYmluL2Jhc2gKU0NSSVBUX0RJUj0iJChjZCAiJChkaXJuYW1lICIkMCIpIiAmJiBwd2QpIgpmb3IgRElSIGluICIkU0NSSVBUX0RJUi9jbGktYnVuZGxlIiBcCiAgICAgICAgICAgIiRTQ1JJUFRfRElSL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vUmVzb3VyY2VzL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vUmVzb3VyY2VzL2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vbGliL05leHVzL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vbGliL25leHVzL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiOyBkbwogICAgaWYgWyAtZiAiJERJUi9ub2RlIiBdICYmIFsgLWQgIiRESVIvbm9kZV9tb2R1bGVzIiBdOyB0aGVuCiAgICAgICAgQlVORExFX0RJUj0iJERJUiIKICAgICAgICBicmVhawogICAgZmkKZG9uZQppZiBbIC16ICIkQlVORExFX0RJUiIgXTsgdGhlbgogICAgZWNobyAiRXJyb3I6IGNsaS1idW5kbGUgbm90IGZvdW5kLiBTZWFyY2hlZCBwYXRoczoiID4mMgogICAgZWNobyAiICAtICRTQ1JJUFRfRElSL2NsaS1idW5kbGUiID4mMgogICAgZWNobyAiICAtICRTQ1JJUFRfRElSL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiID4mMgogICAgZWNobyAiICAtICRTQ1JJUFRfRElSLy4uL1Jlc291cmNlcy9fdXBfL3NyYy1hcGkvZGlzdC9jbGktYnVuZGxlIiA+JjIKICAgIGVjaG8gIiAgLSAkU0NSSVBUX0RJUi8uLi9saWIvTmV4dXMvX3VwXy9zcmMtYXBpL2Rpc3QvY2xpLWJ1bmRsZSIgPiYyCiAgICBleGl0IDEKZmkKZXhlYyAiJEJVTkRMRV9ESVIvbm9kZSIgIiRCVU5ETEVfRElSL25vZGVfbW9kdWxlcy9Ab3BlbmFpL2NvZGV4L2Jpbi9jb2RleC5qcyIgIiRAIgo=" | base64 -d > codex
+          # Supports: macOS (Resources), Linux (/usr/lib/NexusWork/)
+          echo "IyEvYmluL2Jhc2gKU0NSSVBUX0RJUj0iJChjZCAiJChkaXJuYW1lICIkMCIpIiAmJiBwd2QpIgpmb3IgRElSIGluICIkU0NSSVBUX0RJUi9jbGktYnVuZGxlIiBcCiAgICAgICAgICAgIiRTQ1JJUFRfRElSL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vUmVzb3VyY2VzL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vUmVzb3VyY2VzL2NsaS1idW5kbGUiIFwKICAgICAgICAgICAiJFNDUklQVF9ESVIvLi4vbGliL05leHVzV29yay9fdXBfL3NyYy1hcGkvZGlzdC9jbGktYnVuZGxlIiBcCiAgICAgICAgICAgIiRTQ1JJUFRfRElSLy4uL2xpYi9uZXh1c3dvcmsvX3VwXy9zcmMtYXBpL2Rpc3QvY2xpLWJ1bmRsZSI7IGRvCiAgICBpZiBbIC1mICIkRElSL25vZGUiIF0gJiYgWyAtZCAiJERJUi9ub2RlX21vZHVsZXMiIF07IHRoZW4KICAgICAgICBCVU5ETEVfRElSPSIkRElSIgogICAgICAgIGJyZWFrCiAgICBmaQpkb25lCmlmIFsgLXogIiRCVU5ETEVfRElSIiBdOyB0aGVuCiAgICBlY2hvICJFcnJvcjogY2xpLWJ1bmRsZSBub3QgZm91bmQuIFNlYXJjaGVkIHBhdGhzOiIgPiYyCiAgICBlY2hvICIgIC0gJFNDUklQVF9ESVIvY2xpLWJ1bmRsZSIgPiYyCiAgICBlY2hvICIgIC0gJFNDUklQVF9ESVIvX3VwXy9zcmMtYXBpL2Rpc3QvY2xpLWJ1bmRsZSIgPiYyCiAgICBlY2hvICIgIC0gJFNDUklQVF9ESVIvLi4vUmVzb3VyY2VzL191cF8vc3JjLWFwaS9kaXN0L2NsaS1idW5kbGUiID4mMgogICAgZWNobyAiICAtICRTQ1JJUFRfRElSLy4uL2xpYi9OZXh1c1dvcmsvX3VwXy9zcmMtYXBpL2Rpc3QvY2xpLWJ1bmRsZSIgPiYyCiAgICBleGl0IDEKZmkKZXhlYyAiJEJVTkRMRV9ESVIvbm9kZSIgIiRCVU5ETEVfRElSL25vZGVfbW9kdWxlcy9Ab3BlbmFpL2NvZGV4L2Jpbi9jb2RleC5qcyIgIiRAIgo=" | base64 -d > codex
           chmod +x codex
           cp codex "codex-${{ matrix.rust_target }}"
 
@@ -486,7 +486,7 @@ jobs:
         if: steps.check.outputs.skip != 'true' && matrix.platform == 'linux'
         uses: actions/upload-artifact@v4
         with:
-          name: Nexus-${{ matrix.name }}
+          name: NexusWork-${{ matrix.name }}
           path: |
             src-tauri/target/${{ matrix.tauri_target }}/release/bundle/deb/*.deb
             src-tauri/target/${{ matrix.tauri_target }}/release/bundle/rpm/*.rpm
@@ -496,7 +496,7 @@ jobs:
         if: steps.check.outputs.skip != 'true' && matrix.platform == 'windows'
         uses: actions/upload-artifact@v4
         with:
-          name: Nexus-${{ matrix.name }}
+          name: NexusWork-${{ matrix.name }}
           path: |
             src-tauri/target/${{ matrix.tauri_target }}/release/bundle/msi/*.msi
             src-tauri/target/${{ matrix.tauri_target }}/release/bundle/nsis/*.exe
@@ -506,7 +506,7 @@ jobs:
         if: steps.check.outputs.skip != 'true' && startsWith(matrix.platform, 'macos')
         uses: actions/upload-artifact@v4
         with:
-          name: Nexus-${{ matrix.name }}
+          name: NexusWork-${{ matrix.name }}
           path: |
             src-tauri/target/${{ matrix.tauri_target }}/release/bundle/dmg/*.dmg
             src-tauri/target/${{ matrix.tauri_target }}/release/bundle/macos/*.app
@@ -556,7 +556,7 @@ jobs:
           draft: true
           generate_release_notes: true
           tag_name: v${{ steps.version.outputs.version }}
-          name: Nexus v${{ steps.version.outputs.version }}
+          name: NexusWork v${{ steps.version.outputs.version }}
           files: release-files/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

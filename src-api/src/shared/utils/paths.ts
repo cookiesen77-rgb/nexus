@@ -1,7 +1,7 @@
 /**
- * Path utilities for Nexus API
+ * Path utilities for NexusWork API
  *
- * Uses ~/.nexus/ as the standard data directory across all platforms.
+ * Uses ~/.nexuswork/ as the standard data directory across all platforms.
  * This follows the Unix dotfile convention used by developer tools like:
  * - ~/.claude/ (Claude Code)
  * - ~/.npm/ (npm)
@@ -21,7 +21,7 @@ import {
 
 /**
  * Get the application data directory
- * Returns ~/.nexus on all platforms
+ * Returns ~/.nexuswork on all platforms
  */
 
 export function getAppDataDir(): string {

@@ -9,7 +9,6 @@ export default {
   provider: 'Provider',
   mcp: 'MCP',
   connector: 'Connector',
-  about: 'About',
 
   // Account
   manageProfile: 'Manage your profile information',

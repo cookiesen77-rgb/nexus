@@ -7,10 +7,10 @@ import { getAllMcpConfigPaths } from '../../config/constants';
 
 const mcp = new Hono();
 
-// MCP config file path: ~/.nexus/mcp.json
+// MCP config file path: ~/.nexuswork/mcp.json
 const getMcpConfigPath = (): string => {
   const homeDir = os.homedir();
-  return path.join(homeDir, '.nexus', 'mcp.json');
+  return path.join(homeDir, '.nexuswork', 'mcp.json');
 };
 
 // Claude settings file path: ~/.claude/settings.json
@@ -138,7 +138,7 @@ mcp.get('/path', (c) => {
   });
 });
 
-// GET /mcp/all-configs - Read MCP configs from all sources (nexus and claude)
+// GET /mcp/all-configs - Read MCP configs from all sources (nexuswork and claude)
 mcp.get('/all-configs', async (c) => {
   const configPaths = getAllMcpConfigPaths();
   const results: {
@@ -165,7 +165,7 @@ mcp.get('/all-configs', async (c) => {
           servers: config.mcpServers || {},
         });
       } else {
-        // Nexus mcp.json structure
+        // NexusWork mcp.json structure
         results.push({
           name: configInfo.name,
           path: configInfo.path,

@@ -14,8 +14,7 @@ export type SettingsCategory =
   | 'mcp'
   | 'skills'
   | 'connector'
-  | 'data'
-  | 'about';
+  | 'data';
 
 // Common props for settings tabs
 export interface SettingsTabProps {
@@ -70,7 +69,7 @@ export interface MCPServerUI {
   url?: string;
   headers?: Record<string, string>;
   autoExecute?: boolean;
-  source?: 'nexus' | 'claude';
+  source?: 'nexuswork' | 'claude';
 }
 
 // Skill types
@@ -84,7 +83,7 @@ export interface SkillFile {
 export interface SkillInfo {
   id: string;
   name: string;
-  source: 'claude' | 'nexus';
+  source: 'claude' | 'nexuswork';
   path: string;
   files: SkillFile[];
   enabled: boolean;

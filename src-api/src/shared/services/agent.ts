@@ -19,12 +19,27 @@ import {
   type SkillsConfig,
   type TaskPlan,
 } from '@/core/agent';
+import { DEFAULT_API_PORT } from '@/config/constants';
+import { setProxyTarget } from '@/app/api/proxy.js';
 // ============================================================================
-// Logging - uses shared logger (writes to ~/.nexus/logs/nexus.log)
+// Logging - uses shared logger (writes to ~/.nexuswork/logs/nexuswork.log)
 // ============================================================================
 import { createLogger } from '@/shared/utils/logger';
 
 const serviceLogger = createLogger('AgentService');
+
+// Models that require OpenAI chat completions format instead of Anthropic format
+const OPENAI_FORMAT_MODELS = ['gemini-3-pro-preview', 'kimi-k2.5'];
+
+function needsOpenAIFormat(model?: string): boolean {
+  return !!model && OPENAI_FORMAT_MODELS.includes(model);
+}
+
+function getProxyBaseUrl(): string {
+  const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+  const port = process.env.PORT || (isDev ? '2026' : String(DEFAULT_API_PORT));
+  return `http://localhost:${port}/anthropic-proxy`;
+}
 
 // Global agent instance (lazy initialized)
 let globalAgent: IAgent | null = null;
@@ -47,9 +62,25 @@ export function getAgent(config?: Partial<AgentConfig>): IAgent {
     model: config?.model,
   });
 
-  // If config with API credentials is provided, create a new agent instance
-  // Don't cache it to allow different configs per request
   if (config && (config.apiKey || config.baseUrl || config.model)) {
+    // Check if model needs OpenAI format translation
+    if (needsOpenAIFormat(config.model) && config.baseUrl && config.apiKey) {
+      console.log(`[AgentService] Model ${config.model} requires OpenAI format, routing through proxy`);
+
+      // Register proxy target for this model
+      setProxyTarget(config.model!, {
+        targetBaseUrl: config.baseUrl,
+        apiKey: config.apiKey,
+      });
+
+      // Route through local proxy (Claude SDK → proxy → OpenAI format → relay)
+      return createAgent({
+        provider: 'claude',
+        ...config,
+        baseUrl: getProxyBaseUrl(),
+      });
+    }
+
     console.log('[AgentService] Creating new agent with custom config:', {
       hasApiKey: !!config.apiKey,
       baseUrl: config.baseUrl,
@@ -58,7 +89,6 @@ export function getAgent(config?: Partial<AgentConfig>): IAgent {
     return createAgent({ provider: 'claude', ...config });
   }
 
-  // Use cached global agent for default configuration
   if (!globalAgent || config) {
     console.log('[AgentService] Creating agent from environment variables');
     globalAgent = config

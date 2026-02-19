@@ -205,7 +205,7 @@ export interface Settings {
   mcpConfigPath: string;
   mcpEnabled: boolean; // Enable MCP mounting during agent conversations
   mcpUserDirEnabled: boolean; // Enable loading MCP servers from user directory (claude config)
-  mcpAppDirEnabled: boolean; // Enable loading MCP servers from app directory (nexus config)
+  mcpAppDirEnabled: boolean; // Enable loading MCP servers from app directory (nexuswork config)
 
   // Skills settings
   skillsPath: string;
@@ -243,8 +243,8 @@ export interface Settings {
 // Default providers with full configuration
 export const defaultProviders: AIProvider[] = [
   {
-    id: 'nexus',
-    name: 'Nexus',
+    id: 'nexuswork',
+    name: 'NexusWork',
     apiKey: '',
     baseUrl: 'https://nexusapi.cn',
     enabled: true,
@@ -280,7 +280,7 @@ export const providerDefaultModels: Record<string, string[]> = {
 
 // Model suggestions for custom providers (matched by name pattern)
 export const customProviderModels: Record<string, string[]> = {
-  nexus: [
+  nexuswork: [
     'claude-sonnet-4-6',
     'claude-opus-4-6',
     'gemini-3-pro-preview',
@@ -292,7 +292,7 @@ export const customProviderModels: Record<string, string[]> = {
 
 // Default settings
 // Note: Path values are placeholders that get resolved at initialization
-// to platform-specific paths (e.g., ~/Library/Application Support/nexus on macOS)
+// to platform-specific paths (e.g., ~/Library/Application Support/nexuswork on macOS)
 export const defaultSettings: Settings = {
   profile: {
     nickname: 'Guest User',
@@ -323,7 +323,7 @@ export const defaultSettings: Settings = {
   language: '', // Empty string triggers system language detection on first run
 };
 
-const DB_NAME = 'sqlite:nexus.db';
+const DB_NAME = 'sqlite:nexuswork.db';
 
 // Check if running in Tauri environment synchronously
 function isTauriSync(): boolean {
@@ -427,7 +427,7 @@ export async function getSettingsAsync(): Promise<Settings> {
 
   // Fallback to localStorage for browser mode
   try {
-    const stored = localStorage.getItem('nexus_settings');
+    const stored = localStorage.getItem('nexuswork_settings');
     if (stored) {
       const loadedSettings = { ...defaultSettings, ...JSON.parse(stored) };
       // Migration: Add missing default providers
@@ -450,7 +450,7 @@ export async function getSettingsAsync(): Promise<Settings> {
       settingsCache = loadedSettings;
       return loadedSettings;
     } else {
-      console.log('[Settings] localStorage has no nexus_settings');
+      console.log('[Settings] localStorage has no nexuswork_settings');
     }
   } catch (error) {
     console.error('[Settings] Failed to load from localStorage:', error);
@@ -473,7 +473,7 @@ export function getSettings(): Settings {
 
   // Try localStorage first for immediate sync access
   try {
-    const stored = localStorage.getItem('nexus_settings');
+    const stored = localStorage.getItem('nexuswork_settings');
     if (stored) {
       const loadedSettings = { ...defaultSettings, ...JSON.parse(stored) };
       // Migration: Add missing default providers
@@ -533,7 +533,7 @@ export async function saveSettingsAsync(settings: Settings): Promise<void> {
 
   // Also save to localStorage as fallback
   try {
-    localStorage.setItem('nexus_settings', JSON.stringify(settings));
+    localStorage.setItem('nexuswork_settings', JSON.stringify(settings));
   } catch (error) {
     console.error('[Settings] Failed to save to localStorage:', error);
   }
@@ -551,7 +551,7 @@ export function saveSettings(settings: Settings): void {
 
   // Save to localStorage immediately for sync access
   try {
-    localStorage.setItem('nexus_settings', JSON.stringify(settings));
+    localStorage.setItem('nexuswork_settings', JSON.stringify(settings));
     console.log('[Settings] Saved to localStorage successfully');
   } catch (error) {
     console.error('[Settings] Failed to save to localStorage:', error);
@@ -811,7 +811,7 @@ export async function saveSettingItem(
 
   // Also save to localStorage
   try {
-    localStorage.setItem(`nexus_${key}`, value);
+    localStorage.setItem(`nexuswork_${key}`, value);
   } catch (error) {
     console.error(`[Settings] Failed to save ${key} to localStorage:`, error);
   }
@@ -839,7 +839,7 @@ export async function getSettingItem(key: string): Promise<string | null> {
 
   // Fallback to localStorage
   try {
-    return localStorage.getItem(`nexus_${key}`);
+    return localStorage.getItem(`nexuswork_${key}`);
   } catch {
     return null;
   }
@@ -874,7 +874,7 @@ export async function clearAllSettings(): Promise<void> {
   try {
     const keys = Object.keys(localStorage);
     for (const key of keys) {
-      if (key.startsWith('nexus')) {
+      if (key.startsWith('nexuswork')) {
         localStorage.removeItem(key);
       }
     }

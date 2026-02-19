@@ -1,7 +1,7 @@
 /**
- * Path utilities for Nexus
+ * Path utilities for NexusWork
  *
- * Uses ~/.nexus/ as the standard data directory across all platforms.
+ * Uses ~/.nexuswork/ as the standard data directory across all platforms.
  * This follows the Unix dotfile convention used by developer tools like:
  * - ~/.claude/ (Claude Code)
  * - ~/.npm/ (npm)
@@ -71,9 +71,9 @@ export async function getClaudeSkillsDir(): Promise<string> {
 }
 
 /**
- * Get the Nexus MCP config path (platform-aware)
+ * Get the NexusWork MCP config path (platform-aware)
  */
-export async function getNexusMcpPath(): Promise<string> {
+export async function getNexusWorkMcpPath(): Promise<string> {
   const appDir = await getAppDataDir();
   const sep = await getPathSeparator();
   return `${appDir}${sep}mcp.json`;
@@ -81,7 +81,7 @@ export async function getNexusMcpPath(): Promise<string> {
 
 /**
  * Get the application data directory
- * Returns ~/.nexus on all platforms (using correct path separator)
+ * Returns ~/.nexuswork on all platforms (using correct path separator)
  */
 export async function getAppDataDir(): Promise<string> {
   if (cachedAppDataDir) {
@@ -96,7 +96,7 @@ export async function getAppDataDir(): Promise<string> {
       // Remove trailing slash/backslash if present
       const homeClean =
         home.endsWith('/') || home.endsWith('\\') ? home.slice(0, -1) : home;
-      cachedAppDataDir = `${homeClean}${separator}.nexus`;
+      cachedAppDataDir = `${homeClean}${separator}.nexuswork`;
       return cachedAppDataDir;
     } catch (error) {
       console.warn('[Paths] Failed to get home dir:', error);
@@ -104,7 +104,7 @@ export async function getAppDataDir(): Promise<string> {
   }
 
   // Fallback for browser mode
-  cachedAppDataDir = '~/.nexus';
+  cachedAppDataDir = '~/.nexuswork';
   return cachedAppDataDir;
 }
 
@@ -183,7 +183,7 @@ export async function expandPath(path: string): Promise<string> {
 export async function getLogPath(): Promise<string> {
   const appDir = await getAppDataDir();
   const sep = await getPathSeparator();
-  return `${appDir}${sep}logs${sep}nexus.log`;
+  return `${appDir}${sep}logs${sep}nexuswork.log`;
 }
 
 /**

@@ -27,9 +27,9 @@ export const API_BASE_URL = `http://localhost:${API_PORT}`;
 /**
  * App name
  */
-export const APP_NAME = 'Nexus';
+export const APP_NAME = 'NexusWork';
 
 /**
  * App identifier (must match tauri.conf.json)
  */
-export const APP_IDENTIFIER = 'ai.nexus.app';
+export const APP_IDENTIFIER = 'ai.nexuswork.app';

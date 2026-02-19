@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getNexusMcpPath } from '@/shared/lib/paths';
+import { getNexusWorkMcpPath } from '@/shared/lib/paths';
 import { cn } from '@/shared/lib/utils';
 import { useLanguage } from '@/shared/providers/language-provider';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
@@ -145,7 +145,7 @@ export function MCPSettings({ settings, onSettingsChange }: SettingsTabProps) {
 
   // Load default MCP path on mount (platform-aware)
   useEffect(() => {
-    getNexusMcpPath().then(setDefaultMcpPath);
+    getNexusWorkMcpPath().then(setDefaultMcpPath);
   }, []);
 
   // Import by JSON dialog
@@ -205,7 +205,7 @@ export function MCPSettings({ settings, onSettingsChange }: SettingsTabProps) {
         }[]) {
           if (configInfo.name === 'claude') {
             dirs.user = configInfo.path;
-          } else if (configInfo.name === 'nexus') {
+          } else if (configInfo.name === 'nexuswork') {
             dirs.app = configInfo.path;
           }
 
@@ -235,7 +235,7 @@ export function MCPSettings({ settings, onSettingsChange }: SettingsTabProps) {
               url: hasUrl ? cfg.url : undefined,
               headers: hasUrl ? cfg.headers : undefined,
               autoExecute: true,
-              source: configInfo.name as 'nexus' | 'claude',
+              source: configInfo.name as 'nexuswork' | 'claude',
             });
           }
         }
@@ -256,7 +256,7 @@ export function MCPSettings({ settings, onSettingsChange }: SettingsTabProps) {
 
   // Initialize platform-aware default path
   useEffect(() => {
-    getNexusMcpPath().then(setDefaultMcpPath);
+    getNexusWorkMcpPath().then(setDefaultMcpPath);
   }, []);
 
   // Save MCP config via API
@@ -340,7 +340,7 @@ export function MCPSettings({ settings, onSettingsChange }: SettingsTabProps) {
       for (const [name, config] of Object.entries(mcpServers)) {
         const cfg = config as Record<string, unknown>;
         const existingIndex = newServers.findIndex(
-          (s) => s.name === name && s.source === 'nexus'
+          (s) => s.name === name && s.source === 'nexuswork'
         );
 
         // Determine type: use explicit type if provided, otherwise default based on config
@@ -350,7 +350,7 @@ export function MCPSettings({ settings, onSettingsChange }: SettingsTabProps) {
         }
 
         const serverData: MCPServerUI = {
-          id: `nexus-${name}`,
+          id: `nexuswork-${name}`,
           name,
           type: serverType,
           enabled: true,
@@ -359,7 +359,7 @@ export function MCPSettings({ settings, onSettingsChange }: SettingsTabProps) {
           url: cfg.url as string | undefined,
           headers: cfg.headers as Record<string, string> | undefined,
           autoExecute: true,
-          source: 'nexus',
+          source: 'nexuswork',
         };
 
         if (existingIndex >= 0) {
@@ -451,7 +451,7 @@ export function MCPSettings({ settings, onSettingsChange }: SettingsTabProps) {
         };
       }
     } else {
-      const fullId = `nexus-${configDialog.serverName}`;
+      const fullId = `nexuswork-${configDialog.serverName}`;
       if (
         newServers.some(
           (s) => s.id === fullId || s.name === configDialog.serverName
@@ -477,7 +477,7 @@ export function MCPSettings({ settings, onSettingsChange }: SettingsTabProps) {
         url: isUrlType ? configDialog.url : undefined,
         headers: isUrlType && hasHeaders ? headersObj : undefined,
         autoExecute: true,
-        source: 'nexus',
+        source: 'nexuswork',
       });
     }
 

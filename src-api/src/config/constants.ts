@@ -1,7 +1,7 @@
 /**
  * Application Constants
  *
- * Centralized configuration constants for the Nexus API.
+ * Centralized configuration constants for the NexusWork API.
  * All hardcoded values should be defined here for easy management.
  */
 
@@ -13,10 +13,10 @@ import { join } from 'path';
 // ============================================================================
 
 /** Application name */
-export const APP_NAME = 'nexus';
+export const APP_NAME = 'nexuswork';
 
 /** Application data directory name (used in home directory) */
-export const APP_DIR_NAME = '.nexus';
+export const APP_DIR_NAME = '.nexuswork';
 
 /** Claude Code directory name (system config) */
 export const CLAUDE_DIR_NAME = '.claude';
@@ -62,8 +62,8 @@ export const MCP_CONFIG_FILE_NAME = 'mcp.json';
 
 /** Config file search paths (relative) */
 export const CONFIG_SEARCH_PATHS = [
-  './nexus.config.json',
-  './config/nexus.json',
+  './nexuswork.config.json',
+  './config/nexuswork.json',
 ];
 
 // ============================================================================
@@ -116,7 +116,7 @@ export function getHomeDir(): string {
   return homedir();
 }
 
-/** Get Nexus app data directory */
+/** Get NexusWork app data directory */
 export function getAppDir(): string {
   return join(homedir(), APP_DIR_NAME);
 }
@@ -126,8 +126,8 @@ export function getClaudeDir(): string {
   return join(homedir(), CLAUDE_DIR_NAME);
 }
 
-/** Get Nexus skills directory */
-export function getNexusSkillsDir(): string {
+/** Get NexusWork skills directory */
+export function getNexusWorkSkillsDir(): string {
   return join(getAppDir(), SKILLS_DIR_NAME);
 }
 
@@ -139,13 +139,13 @@ export function getClaudeSkillsDir(): string {
 /** Get all skills directories to search */
 export function getAllSkillsDirs(): { name: string; path: string }[] {
   return [
-    { name: 'nexus', path: getNexusSkillsDir() },
+    { name: 'nexuswork', path: getNexusWorkSkillsDir() },
     { name: 'claude', path: getClaudeSkillsDir() },
   ];
 }
 
-/** Get Nexus MCP config path */
-export function getNexusMcpConfigPath(): string {
+/** Get NexusWork MCP config path */
+export function getNexusWorkMcpConfigPath(): string {
   return join(getAppDir(), MCP_CONFIG_FILE_NAME);
 }
 
@@ -157,7 +157,7 @@ export function getClaudeSettingsPath(): string {
 /** Get all MCP config paths to search */
 export function getAllMcpConfigPaths(): { name: string; path: string }[] {
   return [
-    { name: 'nexus', path: getNexusMcpConfigPath() },
+    { name: 'nexuswork', path: getNexusWorkMcpConfigPath() },
     { name: 'claude', path: getClaudeSettingsPath() },
   ];
 }

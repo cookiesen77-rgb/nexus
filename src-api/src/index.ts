@@ -10,6 +10,7 @@ import {
   mcpRoutes,
   previewRoutes,
   providersRoutes,
+  proxyRoutes,
   sandboxRoutes,
 } from '@/app/api';
 import { corsMiddleware } from '@/app/middleware/index.js';
@@ -34,11 +35,12 @@ app.route('/preview', previewRoutes);
 app.route('/providers', providersRoutes);
 app.route('/files', filesRoutes);
 app.route('/mcp', mcpRoutes);
+app.route('/anthropic-proxy', proxyRoutes);
 
 // Root endpoint
 app.get('/', (c) => {
   return c.json({
-    name: 'Nexus API',
+    name: 'NexusWork API',
     version: '0.1.1',
     endpoints: {
       health: '/health',
@@ -48,6 +50,7 @@ app.get('/', (c) => {
       providers: '/providers',
       files: '/files',
       mcp: '/mcp',
+      proxy: '/anthropic-proxy',
     },
   });
 });
@@ -103,7 +106,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Initialize and start server
 async function start() {
-  console.log(`🚀 Nexus API starting...`);
+  console.log(`🚀 NexusWork API starting...`);
 
   // Load configuration
   await loadConfig();

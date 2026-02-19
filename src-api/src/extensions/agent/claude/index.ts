@@ -50,7 +50,7 @@ import { loadMcpServers, type McpServerConfig } from '@/shared/mcp/loader';
 // Skills are loaded directly by Claude SDK from ~/.claude/skills/ via settingSources: ['user']
 // No custom loading needed
 // ============================================================================
-// Logging - uses shared logger (writes to ~/.nexus/logs/nexus.log)
+// Logging - uses shared logger (writes to ~/.nexuswork/logs/nexuswork.log)
 // ============================================================================
 import { createLogger, LOG_FILE_PATH } from '@/shared/utils/logger';
 
@@ -120,8 +120,8 @@ function isPackagedApp(): boolean {
   const execPath = process.execPath;
   if (
     execPath.includes('.app/Contents/MacOS') ||
-    execPath.includes('\\Nexus\\') ||
-    execPath.includes('/Nexus/')
+    execPath.includes('\\NexusWork\\') ||
+    execPath.includes('/NexusWork/')
   ) {
     return true;
   }
@@ -168,7 +168,7 @@ function getSidecarClaudeCodePath(): string | undefined {
   const claudeName =
     os === 'win32' ? `claude-${targetTriple}.exe` : `claude-${targetTriple}`;
 
-  // Get the directory where this process (nexus-api) is running from
+  // Get the directory where this process (nexuswork-api) is running from
   // In a packaged app, this would be the MacOS directory or the app directory
   const execDir = dirname(process.execPath);
 
@@ -254,9 +254,9 @@ function getSidecarClaudeCodePath(): string | undefined {
     // Windows: Tauri places resources relative to exe with preserved path structure
     join(execDir, '_up_', 'src-api', 'dist', 'cli-bundle'),
     // Linux: Tauri deb/rpm places resources in /usr/lib/<AppName>/
-    // execDir is /usr/bin, so ../lib/Nexus/ -> /usr/lib/Nexus/
-    join(execDir, '..', 'lib', 'Nexus', '_up_', 'src-api', 'dist', 'cli-bundle'),
-    join(execDir, '..', 'lib', 'nexus', '_up_', 'src-api', 'dist', 'cli-bundle'),
+    // execDir is /usr/bin, so ../lib/NexusWork/ -> /usr/lib/NexusWork/
+    join(execDir, '..', 'lib', 'NexusWork', '_up_', 'src-api', 'dist', 'cli-bundle'),
+    join(execDir, '..', 'lib', 'nexuswork', '_up_', 'src-api', 'dist', 'cli-bundle'),
     // Legacy claude-bundle for backward compatibility
     join(execDir, 'claude-bundle'),
     join(execDir, '..', 'Resources', 'claude-bundle'),
@@ -612,8 +612,8 @@ function getSessionWorkDir(
   console.log('[Claude] Expanded path:', expandedPath);
 
   // Check if the workDir is already a session folder path from frontend
-  // Session paths from frontend look like: ~/.nexus/sessions/{sessionId}/task-{xx}
-  // or: ~/.nexus/sessions/{sessionId}
+  // Session paths from frontend look like: ~/.nexuswork/sessions/{sessionId}/task-{xx}
+  // or: ~/.nexuswork/sessions/{sessionId}
   // Support both Unix (/) and Windows (\) path separators
   const hasSessionsPath = expandedPath.includes('/sessions/') || expandedPath.includes('\\sessions\\');
   const endsWithSessions = expandedPath.endsWith('/sessions') || expandedPath.endsWith('\\sessions');
@@ -1317,7 +1317,7 @@ User's request (answer this AFTER reading the images):
     // Use settingSources based on skillsConfig to control skill loading
     // - 'user' source loads from ~/.claude directory (User skills)
     // - 'project' source loads from project/.claude directory
-    // User's custom API settings from Nexus settings page are passed via env config
+    // User's custom API settings from NexusWork settings page are passed via env config
     // which takes priority over ~/.claude/settings.json because we set ANTHROPIC_API_KEY directly
     const settingSources: ('user' | 'project')[] = this.buildSettingSources(options?.skillsConfig);
     logger.info(`[Claude ${session.id}] Skills config:`, options?.skillsConfig);

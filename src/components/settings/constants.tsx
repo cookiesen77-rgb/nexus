@@ -9,7 +9,6 @@ import {
   Cpu,
   Database,
   FolderOpen,
-  Info,
   Plug,
   Server,
   Settings,
@@ -32,7 +31,6 @@ export const categoryIcons: Record<
   skills: Sparkles,
   connector: Plug,
   data: Database,
-  about: Info,
 };
 
 // Provider icons mapping (derived from defaultProviders)

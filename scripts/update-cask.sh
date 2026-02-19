@@ -8,9 +8,9 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-CASK_FILE="$PROJECT_ROOT/Casks/nexus.rb"
+CASK_FILE="$PROJECT_ROOT/Casks/nexuswork.rb"
 
-GITHUB_REPO="nexus-ai/nexus"
+GITHUB_REPO="nexuswork-ai/nexuswork"
 
 # Get version from argument
 if [ -z "$1" ]; then
@@ -25,8 +25,8 @@ echo "Updating cask for version: $VERSION"
 echo ""
 
 # Download URLs
-ARM_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/Nexus_${VERSION}_aarch64.dmg"
-INTEL_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/Nexus_${VERSION}_x64.dmg"
+ARM_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/NexusWork_${VERSION}_aarch64.dmg"
+INTEL_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/NexusWork_${VERSION}_x64.dmg"
 
 # Calculate SHA256 from remote files
 echo "Downloading and calculating ARM64 SHA256..."
@@ -55,6 +55,6 @@ echo ""
 echo "Updated $CASK_FILE"
 echo ""
 echo "Next steps:"
-echo "  git add Casks/nexus.rb"
-echo "  git commit -m \"chore: update nexus to v$VERSION\""
+echo "  git add Casks/nexuswork.rb"
+echo "  git commit -m \"chore: update nexuswork to v$VERSION\""
 echo "  git push"
