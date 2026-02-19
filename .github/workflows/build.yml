@@ -304,7 +304,8 @@ jobs:
           du -sh cli-bundle/
 
       - name: Sign CLI bundle binaries (macOS)
-        if: steps.check.outputs.skip != 'true' && startsWith(matrix.platform, 'macos') && secrets.APPLE_CERTIFICATE != ''
+        if: steps.check.outputs.skip != 'true' && startsWith(matrix.platform, 'macos')
+        continue-on-error: true
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
