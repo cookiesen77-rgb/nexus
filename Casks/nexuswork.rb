@@ -2,11 +2,11 @@
 # frozen_string_literal: true
 
 cask "nexuswork" do
-  arch arm: "aarch64", intel: "bfa02c3a8af6a4408f7cb35bb6bf55d13f5c45ef96cc26ba44a2fcdd6bfca238"
+  arch arm: "aarch64", intel: "40bb947e8a718f6adb3e298c9898ef89f3ff14a2baa575053cf4b0e45439d2bf"
 
   version "0.1.18"
-  sha256 arm:   "70cd818a614bc783e83492ac985f773cec7f4445ed2adf9f5e5c4d79dbcc631d",
-         intel: "bfa02c3a8af6a4408f7cb35bb6bf55d13f5c45ef96cc26ba44a2fcdd6bfca238"
+  sha256 arm:   "def20d1092f1e436939259db4c79f72b175f7ef1f83b467440960b88b2cfcd94",
+         intel: "40bb947e8a718f6adb3e298c9898ef89f3ff14a2baa575053cf4b0e45439d2bf"
 
   url "https://github.com/nexuswork-ai/nexuswork/releases/download/v#{version}/NexusWork_#{version}_#{arch}.dmg",
       verified: "github.com/nexuswork-ai/nexuswork/"
